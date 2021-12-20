@@ -116,9 +116,8 @@
     </form>
 </div>
 {{#js}}
-require(['jquery', 'core/custom_interaction_events'], function($, CustomEvents) {
-    CustomEvents.define('#{{id}}', [CustomEvents.events.accessibleChange]);
-    $('#{{id}}').on(CustomEvents.events.accessibleChange, function() {
+require(['jquery'], function($) {
+    $('#{{id}}').change(function() {
         var ignore = $(this).find(':selected').attr('data-ignore');
         if (typeof ignore === typeof undefined) {
             $('#{{formid}}').submit();

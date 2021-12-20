@@ -44,6 +44,7 @@ Feature: Award badges based on competency completion
     And I set the following fields to these values:
       | Name | Course Badge |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     # Set the competency as a criteria for the badge
@@ -64,7 +65,6 @@ Feature: Award badges based on competency completion
     And I set the following fields to these values:
       | Rating | C |
     And I click on "Rate" "button" in the "Rate" "dialogue"
-    And I should see "The competency rating was manually set in the course"
     And I log out
     # See if we got the badge
     Then I log in as "user1"
@@ -89,6 +89,7 @@ Feature: Award badges based on competency completion
     And I set the following fields to these values:
       | Name | Site Badge |
       | Description | Site badge description |
+      | issuername | Tester of site badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     # Set the competency as a criteria for the badge
@@ -115,8 +116,8 @@ Feature: Award badges based on competency completion
     And I press "Rate"
     And I set the following fields to these values:
       | Rating | C |
+    And I wait until the page is ready
     And I click on "Rate" "button" in the "Rate" "dialogue"
-    And I should see "The competency rating was manually set in the course"
     And I log out
     # See if we got the badge
     Then I log in as "user1"
@@ -141,6 +142,7 @@ Feature: Award badges based on competency completion
     And I set the following fields to these values:
       | Name | Site Badge |
       | Description | Site badge description |
+      | issuername | Tester of site badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     # Set the competency as a criteria for the badge
@@ -169,8 +171,8 @@ Feature: Award badges based on competency completion
     And I press "Rate"
     And I set the following fields to these values:
       | Rating | C |
+    And I wait until the page is ready
     And I click on "Rate" "button" in the "Rate" "dialogue"
-    And I should see "The competency rating was manually set in the course"
     And I log out
     # We should not get the badge yet.
     Then I log in as "user1"
@@ -185,8 +187,8 @@ Feature: Award badges based on competency completion
     And I press "Rate"
     And I set the following fields to these values:
       | Rating | C |
+    And I wait until the page is ready
     And I click on "Rate" "button" in the "Rate" "dialogue"
-    And I should see "The competency rating was manually set in the course"
     And I log out
     # See if we got the badge now.
     Then I log in as "user1"

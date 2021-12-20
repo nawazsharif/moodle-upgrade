@@ -28,7 +28,6 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 
 use core_privacy\local\request\writer;
-use core_privacy\tests\provider_testcase;
 
 /**
  * Unit tests for the privacy API implementation.
@@ -36,7 +35,7 @@ use core_privacy\tests\provider_testcase;
  * @copyright 2018 David Mudrák <david@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_workshop_privacy_provider_testcase extends provider_testcase {
+class mod_workshop_privacy_provider_testcase extends advanced_testcase {
 
     /** @var testing_data_generator */
     protected $generator;
@@ -121,7 +120,7 @@ class mod_workshop_privacy_provider_testcase extends provider_testcase {
      *
      *  etc.
      */
-    protected function setUp(): void {
+    protected function setUp() {
         global $DB;
         $this->resetAfterTest();
         $this->setAdminUser();
@@ -190,19 +189,19 @@ class mod_workshop_privacy_provider_testcase extends provider_testcase {
         // Student1 has data in workshop11 (author + self reviewer), workshop12 (author) and workshop21 (reviewer).
         $contextlist = \mod_workshop\privacy\provider::get_contexts_for_userid($this->student1->id);
         $this->assertInstanceOf(\core_privacy\local\request\contextlist::class, $contextlist);
-        $this->assertEqualsCanonicalizing([$context11->id, $context12->id, $context21->id], $contextlist->get_contextids());
+        $this->assertEquals([$context11->id, $context12->id, $context21->id], $contextlist->get_contextids(), '', 0.0, 10, true);
 
         // Student2 has data in workshop11 (reviewer), workshop12 (reviewer) and workshop21 (author).
         $contextlist = \mod_workshop\privacy\provider::get_contexts_for_userid($this->student2->id);
-        $this->assertEqualsCanonicalizing([$context11->id, $context12->id, $context21->id], $contextlist->get_contextids());
+        $this->assertEquals([$context11->id, $context12->id, $context21->id], $contextlist->get_contextids(), '', 0.0, 10, true);
 
         // Student3 has data in workshop11 (reviewer).
         $contextlist = \mod_workshop\privacy\provider::get_contexts_for_userid($this->student3->id);
-        $this->assertEqualsCanonicalizing([$context11->id], $contextlist->get_contextids());
+        $this->assertEquals([$context11->id], $contextlist->get_contextids(), '', 0.0, 10, true);
 
         // Teacher4 has data in workshop12 (gradeoverby) and workshop21 (gradinggradeoverby).
         $contextlist = \mod_workshop\privacy\provider::get_contexts_for_userid($this->teacher4->id);
-        $this->assertEqualsCanonicalizing([$context21->id, $context12->id], $contextlist->get_contextids());
+        $this->assertEquals([$context21->id, $context12->id], $contextlist->get_contextids(), '', 0.0, 10, true);
     }
 
     /**
@@ -227,7 +226,7 @@ class mod_workshop_privacy_provider_testcase extends provider_testcase {
             $this->student3->id, // Student3 has data in workshop11 (reviewer).
         ];
         $actual11 = $userlist11->get_userids();
-        $this->assertEqualsCanonicalizing($expected11, $actual11);
+        $this->assertEquals($expected11, $actual11, '', 0, 10, true);
 
         // Users in the workshop12.
         $userlist12 = new \core_privacy\local\request\userlist($context12, 'mod_workshop');
@@ -238,7 +237,7 @@ class mod_workshop_privacy_provider_testcase extends provider_testcase {
             $this->teacher4->id, // Teacher4 has data in workshop12 (gradeoverby).
         ];
         $actual12 = $userlist12->get_userids();
-        $this->assertEqualsCanonicalizing($expected12, $actual12);
+        $this->assertEquals($expected12, $actual12, '', 0, 10, true);
 
         // Users in the workshop21.
         $userlist21 = new \core_privacy\local\request\userlist($context21, 'mod_workshop');
@@ -249,7 +248,7 @@ class mod_workshop_privacy_provider_testcase extends provider_testcase {
             $this->teacher4->id, // Teacher4 has data in workshop21 (gradinggradeoverby).
         ];
         $actual21 = $userlist21->get_userids();
-        $this->assertEqualsCanonicalizing($expected21, $actual21);
+        $this->assertEquals($expected21, $actual21, '', 0, 10, true);
     }
 
     /**

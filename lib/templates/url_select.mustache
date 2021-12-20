@@ -75,9 +75,8 @@
 </div>
 {{^showbutton}}
     {{#js}}
-        require(['jquery', 'core/custom_interaction_events'], function($, CustomEvents) {
-            CustomEvents.define('#{{id}}', [CustomEvents.events.accessibleChange]);
-            $('#{{id}}').on(CustomEvents.events.accessibleChange, function() {
+        require(['jquery'], function($) {
+            $('#{{id}}').change(function() {
                 if (!$(this).val()) {
                     return false;
                 }

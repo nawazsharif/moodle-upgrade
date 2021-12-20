@@ -36,7 +36,7 @@ use \core_favourites\local\entity\favourite;
  */
 class favourite_repository_testcase extends advanced_testcase {
 
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
     }
 
@@ -302,16 +302,6 @@ class favourite_repository_testcase extends advanced_testcase {
         );
         $favouritesrepo->add($favourite);
 
-        // Add another favourite.
-        $favourite = new favourite(
-            'core_course',
-            'course_item',
-            $course1context->instanceid,
-            $course1context->id,
-            $user1context->instanceid
-        );
-        $favouritesrepo->add($favourite);
-
         // From the repo, get the list of favourites for the 'core_course/course' area.
         $userfavourites = $favouritesrepo->find_by(['component' => 'core_course', 'itemtype' => 'course']);
         $this->assertIsArray($userfavourites);
@@ -321,16 +311,6 @@ class favourite_repository_testcase extends advanced_testcase {
         $userfavourites = $favouritesrepo->find_by(['component' => 'core_cannibalism', 'itemtype' => 'course']);
         $this->assertIsArray($userfavourites);
         $this->assertCount(0, $userfavourites);
-
-        // From the repo, get the list of favourites for the 'core_course/course' area when passed as an array.
-        $userfavourites = $favouritesrepo->find_by(['component' => 'core_course', 'itemtype' => ['course']]);
-        $this->assertIsArray($userfavourites);
-        $this->assertCount(1, $userfavourites);
-
-        // From the repo, get the list of favourites for the 'core_course' area given multiple item_types.
-        $userfavourites = $favouritesrepo->find_by(['component' => 'core_course', 'itemtype' => ['course', 'course_item']]);
-        $this->assertIsArray($userfavourites);
-        $this->assertCount(2, $userfavourites);
     }
 
     /**

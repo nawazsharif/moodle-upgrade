@@ -17,40 +17,22 @@
 
 namespace MongoDB\Model;
 
-use Iterator;
-use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnexpectedValueException;
-use function is_array;
-use function MongoDB\BSON\toPHP;
-use function sprintf;
-use function strlen;
-use function substr;
-use function unpack;
+use MongoDB\Model\BSONDocument;
+use Iterator;
 
 /**
  * Iterator for BSON documents.
  */
 class BSONIterator implements Iterator
 {
-    /** @var integer */
     private static $bsonSize = 4;
 
-    /** @var string */
     private $buffer;
-
-    /** @var integer */
     private $bufferLength;
-
-    /** @var mixed */
     private $current;
-
-    /** @var integer */
     private $key = 0;
-
-    /** @var integer */
     private $position = 0;
-
-    /** @var array */
     private $options;
 
     /**
@@ -72,7 +54,7 @@ class BSONIterator implements Iterator
             throw InvalidArgumentException::invalidType('"typeMap" option', $options['typeMap'], 'array');
         }
 
-        if (! isset($options['typeMap'])) {
+        if ( ! isset($options['typeMap'])) {
             $options['typeMap'] = [];
         }
 
@@ -147,7 +129,7 @@ class BSONIterator implements Iterator
             throw new UnexpectedValueException(sprintf('Expected %d bytes; %d remaining', $documentLength, $this->bufferLength - $this->position));
         }
 
-        $this->current = toPHP(substr($this->buffer, $this->position, $documentLength), $this->options['typeMap']);
+        $this->current = \MongoDB\BSON\toPHP(substr($this->buffer, $this->position, $documentLength), $this->options['typeMap']);
         $this->position += $documentLength;
     }
 }

@@ -146,11 +146,7 @@ class restore_gradebook_structure_step extends restore_structure_step {
 
         $paths[] = new restore_path_element('attributes', '/gradebook/attributes');
         $paths[] = new restore_path_element('grade_category', '/gradebook/grade_categories/grade_category');
-
-        $gradeitem = new restore_path_element('grade_item', '/gradebook/grade_items/grade_item');
-        $paths[] = $gradeitem;
-        $this->add_plugin_structure('local', $gradeitem);
-
+        $paths[] = new restore_path_element('grade_item', '/gradebook/grade_items/grade_item');
         if ($userinfo) {
             $paths[] = new restore_path_element('grade_grade', '/gradebook/grade_items/grade_item/grade_grades/grade_grade');
         }
@@ -1881,11 +1877,6 @@ class restore_course_structure_step extends restore_structure_step {
             $data->idnumber = '';
         }
 
-        // If we restore a course from this site, let's capture the original course id.
-        if ($isnewcourse && $this->get_task()->is_samesite()) {
-            $data->originalcourseid = $this->get_task()->get_old_courseid();
-        }
-
         // Any empty value for course->hiddensections will lead to 0 (default, show collapsed).
         // It has been reported that some old 1.9 courses may have it null leading to DB error. MDL-31532
         if (empty($data->hiddensections)) {
@@ -2119,6 +2110,7 @@ class restore_ras_and_caps_structure_step extends restore_structure_step {
 
     public function process_override($data) {
         $data = (object)$data;
+
         // Check roleid is one of the mapped ones
         $newrole = $this->get_mapping('role', $data->roleid);
         $newroleid = $newrole->newitemid ?? false;
@@ -2136,13 +2128,8 @@ class restore_ras_and_caps_structure_step extends restore_structure_step {
                 // Check if the new role is an overrideable role AND if the user performing the restore has the
                 // capability to assign the capability.
                 if (in_array($newrole->info['shortname'], $overrideableroles) &&
-<<<<<<< HEAD
                     ($safecapability && has_capability('moodle/role:safeoverride', $context, $userid) ||
                         !$safecapability && has_capability('moodle/role:override', $context, $userid))
-=======
-                    (has_capability('moodle/role:override', $context, $userid) ||
-                            ($safecapability && has_capability('moodle/role:safeoverride', $context, $userid)))
->>>>>>> remotes/origin/MOODLE_310_STABLE
                 ) {
                     assign_capability($data->capability, $data->permission, $newroleid, $this->task->get_contextid());
                 } else {
@@ -4023,81 +4010,6 @@ class restore_activity_grade_history_structure_step extends restore_structure_st
 }
 
 /**
- * This structure steps restores the content bank content
- */
-class restore_contentbankcontent_structure_step extends restore_structure_step {
-
-    /**
-     * Define structure for content bank step
-     */
-    protected function define_structure() {
-
-        $paths = [];
-        $paths[] = new restore_path_element('contentbankcontent', '/contents/content');
-
-        return $paths;
-    }
-
-    /**
-     * Define data processed for content bank
-     *
-     * @param mixed  $data
-     */
-    public function process_contentbankcontent($data) {
-        global $DB;
-
-        $data = (object)$data;
-        $oldid = $data->id;
-
-        $params = [
-            'name'           => $data->name,
-            'contextid'      => $this->task->get_contextid(),
-            'contenttype'    => $data->contenttype,
-            'instanceid'     => $data->instanceid,
-            'timecreated'    => $data->timecreated,
-        ];
-        $exists = $DB->record_exists('contentbank_content', $params);
-        if (!$exists) {
-            $params['configdata'] = $data->configdata;
-            $params['timemodified'] = time();
-
-            // Trying to map users. Users cannot always be mapped, e.g. when copying.
-            $params['usercreated'] = $this->get_mappingid('user', $data->usercreated);
-            if (!$params['usercreated']) {
-                // Leave the content creator unchanged when we are restoring the same site.
-                // Otherwise use current user id.
-                if ($this->task->is_samesite()) {
-                    $params['usercreated'] = $data->usercreated;
-                } else {
-                    $params['usercreated'] = $this->task->get_userid();
-                }
-            }
-            $params['usermodified'] = $this->get_mappingid('user', $data->usermodified);
-            if (!$params['usermodified']) {
-                // Leave the content modifier unchanged when we are restoring the same site.
-                // Otherwise use current user id.
-                if ($this->task->is_samesite()) {
-                    $params['usermodified'] = $data->usermodified;
-                } else {
-                    $params['usermodified'] = $this->task->get_userid();
-                }
-            }
-
-            $newitemid = $DB->insert_record('contentbank_content', $params);
-            $this->set_mapping('contentbank_content', $oldid, $newitemid, true);
-        }
-    }
-
-    /**
-     * Define data processed after execute for content bank
-     */
-    protected function after_execute() {
-        // Add related files.
-        $this->add_related_files('contentbank', 'public', 'contentbank_content');
-    }
-}
-
-/**
  * This structure steps restores one instance + positions of one block
  * Note: Positions corresponding to one existing context are restored
  * here, but all the ones having unknown contexts are sent to backup_ids
@@ -4210,7 +4122,7 @@ class restore_block_instance_structure_step extends restore_structure_step {
         // Let's look for anything within configdata neededing processing
         // (nulls and uses of legacy file.php)
         if ($attrstotransform = $this->task->get_configdata_encoded_attributes()) {
-            $configdata = (array) unserialize_object(base64_decode($data->configdata));
+            $configdata = (array)unserialize(base64_decode($data->configdata));
             foreach ($configdata as $attribute => $value) {
                 if (in_array($attribute, $attrstotransform)) {
                     $configdata[$attribute] = $this->contentprocessor->process_cdata($value);

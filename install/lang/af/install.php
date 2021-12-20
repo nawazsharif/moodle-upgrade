@@ -36,10 +36,6 @@ $string['chooselanguagesub'] = 'Kies asseblief \'n taal vir die installasie. Hie
 $string['clialreadyconfigured'] = 'Die konfigurasielêer config.php bestaan reeds. Gebruik admin/cli/install_database.php asseblief om Moodle vir hierdie webwerf te installeer.';
 $string['clialreadyinstalled'] = 'Die konfigurasielêer config.php bestaan reeds. Gebruik admin/cli/install_database.php asseblief om Moodle vir hierdie webwerf by te werk.';
 $string['cliinstallheader'] = 'Installasieprogram vir Moodle-{$a}-opdraglyn';
-<<<<<<< HEAD
-=======
-$string['clitablesexist'] = 'Databasistabelle reeds teenwoordig: CLI-installasie kan nie voortgesit word nie.';
->>>>>>> remotes/origin/MOODLE_310_STABLE
 $string['databasehost'] = 'Databasisgasheer';
 $string['databasename'] = 'Databasisnaam';
 $string['databasetypehead'] = 'Kies databasisdrywer';

@@ -62,17 +62,8 @@ class summary_table extends table_sql {
     /** @var array The values available for pagination size per page. */
     protected $perpageoptions = [50, 100, 200];
 
-    /** @var int The course ID containing the forum(s) being reported on. */
-    protected $courseid;
-
-    /** @var bool True if reporting on all forums in course user has access to, false if reporting on a single forum */
-    protected $iscoursereport = false;
-
-    /** @var bool True if user has access to all forums in the course (and is running course report), otherwise false. */
-    protected $accessallforums = false;
-
-    /** @var \stdClass The course module object(s) of the forum(s) being reported on. */
-    protected $cms = [];
+    /** @var \stdClass The course module object of the forum being reported on. */
+    protected $cm;
 
     /**
      * @var int The user ID if only one user's summary will be generated.
@@ -86,14 +77,9 @@ class summary_table extends table_sql {
     protected $logreader = null;
 
     /**
-     * @var array of \context objects for the forums included in the report.
+     * @var \context|null
      */
-    protected $forumcontexts = [];
-
-    /**
-     * @var context_course|context_module The context where the report is being run (either a specific forum or the course).
-     */
-    protected $userfieldscontext = null;
+    protected $context = null;
 
     /** @var bool Whether the user has the capability/capabilities to perform bulk operations. */
     protected $allowbulkoperations = false;
@@ -122,24 +108,25 @@ class summary_table extends table_sql {
      * @param bool $canseeprivatereplies Whether the user can see all private replies or not.
      * @param int $perpage The number of rows to display per page.
      * @param bool $canexport Is the user allowed to export records?
-     * @param bool $iscoursereport Whether the user is running a course level report
-     * @param bool $accessallforums If user is running a course level report, do they have access to all forums in the course?
      */
     public function __construct(int $courseid, array $filters, bool $allowbulkoperations,
-            bool $canseeprivatereplies, int $perpage, bool $canexport, bool $iscoursereport, bool $accessallforums) {
-        global $OUTPUT;
+            bool $canseeprivatereplies, int $perpage, bool $canexport) {
+        global $USER, $OUTPUT;
 
-        $uniqueid = $courseid . ($iscoursereport ? '' : '_' . $filters['forums'][0]);
-        parent::__construct("summaryreport_{$uniqueid}");
+        $forumid = $filters['forums'][0];
 
-        $this->courseid = $courseid;
-        $this->iscoursereport = $iscoursereport;
-        $this->accessallforums = $accessallforums;
+        parent::__construct("summaryreport_{$courseid}_{$forumid}");
+
+        $this->cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
+        $this->context = \context_module::instance($this->cm->id);
         $this->allowbulkoperations = $allowbulkoperations;
         $this->canseeprivatereplies = $canseeprivatereplies;
         $this->perpage = $perpage;
 
-        $this->set_forum_properties($filters['forums']);
+        // Only show their own summary unless they have permission to view all.
+        if (!has_capability('forumreport/summary:viewall', $this->context)) {
+            $this->userid = $USER->id;
+        }
 
         $columnheaders = [];
 
@@ -194,37 +181,6 @@ class summary_table extends table_sql {
     }
 
     /**
-     * Sets properties that are determined by forum filter values.
-     *
-     * @param array $forumids The forum IDs passed in by the filter.
-     * @return void
-     */
-    protected function set_forum_properties(array $forumids): void {
-        global $USER;
-
-        // Course context if reporting on all forums in the course the user has access to.
-        if ($this->iscoursereport) {
-            $this->userfieldscontext = \context_course::instance($this->courseid);
-        }
-
-        foreach ($forumids as $forumid) {
-            $cm = get_coursemodule_from_instance('forum', $forumid, $this->courseid);
-            $this->cms[] = $cm;
-            $this->forumcontexts[$cm->id] = \context_module::instance($cm->id);
-
-            // Set forum context if not reporting on course.
-            if (!isset($this->userfieldscontext)) {
-                $this->userfieldscontext = $this->forumcontexts[$cm->id];
-            }
-
-            // Only show own summary unless they have permission to view all in every forum being reported.
-            if (empty($this->userid) && !has_capability('forumreport/summary:viewall', $this->forumcontexts[$cm->id])) {
-                $this->userid = $USER->id;
-            }
-        }
-    }
-
-    /**
      * Provides the string name of each filter type, to be used by errors.
      * Note: This does not use language strings as the value is injected into error strings.
      *
@@ -274,7 +230,7 @@ class summary_table extends table_sql {
         }
 
         global $OUTPUT;
-        return $OUTPUT->user_picture($data, array('courseid' => $this->courseid, 'includefullname' => true));
+        return $OUTPUT->user_picture($data, array('size' => 35, 'courseid' => $this->cm->course, 'includefullname' => true));
     }
 
     /**
@@ -346,7 +302,7 @@ class summary_table extends table_sql {
         }
 
         $params = [
-            'id' => $this->cms[0]->instance, // Forum id.
+            'id' => $this->cm->instance, // Forum id.
             'userids[]' => $data->userid, // User id.
         ];
 
@@ -425,15 +381,14 @@ class summary_table extends table_sql {
 
         switch($filtertype) {
             case self::FILTER_FORUM:
-                // Requires at least one forum ID.
-                if (empty($values)) {
+                // Requires exactly one forum ID.
+                if (count($values) != 1) {
                     $paramcounterror = true;
                 } else {
                     // No select fields required - displayed in title.
                     // No extra joins required, forum is already joined.
-                    list($forumidin, $forumidparams) = $DB->get_in_or_equal($values, SQL_PARAMS_NAMED);
-                    $this->sql->filterwhere .= " AND f.id {$forumidin}";
-                    $this->sql->params += $forumidparams;
+                    $this->sql->filterwhere .= ' AND f.id = :forumid';
+                    $this->sql->params['forumid'] = $values[0];
                 }
 
                 break;
@@ -543,12 +498,13 @@ class summary_table extends table_sql {
     protected function define_base_sql(): void {
         global $USER;
 
-        $userfields = get_extra_user_fields($this->userfieldscontext);
+        $userfields = get_extra_user_fields($this->context);
         $userfieldssql = \user_picture::fields('u', $userfields);
 
         // Define base SQL query format.
-        $this->sql->basefields = ' u.id AS userid,
-                                   d.course AS courseid,
+        $this->sql->basefields = ' ue.userid AS userid,
+                                   e.courseid AS courseid,
+                                   f.id as forumid,
                                    SUM(CASE WHEN p.parent = 0 THEN 1 ELSE 0 END) AS postcount,
                                    SUM(CASE WHEN p.parent != 0 THEN 1 ELSE 0 END) AS replycount,
                                    ' . $userfieldssql . ',
@@ -567,27 +523,30 @@ class summary_table extends table_sql {
             $privaterepliesparams['privatereplyfrom'] = $USER->id;
         }
 
-        list($enrolleduserssql, $enrolledusersparams) = get_enrolled_sql($this->get_context());
-        $this->sql->params += $enrolledusersparams;
+        $this->sql->basefromjoins = '    {enrol} e
+                                    JOIN {user_enrolments} ue ON ue.enrolid = e.id
+                                    JOIN {user} u ON u.id = ue.userid
+                                    JOIN {forum} f ON f.course = e.courseid
+                                    JOIN {forum_discussions} d ON d.forum = f.id
+                               LEFT JOIN {forum_posts} p ON p.discussion =  d.id
+                                     AND p.userid = ue.userid
+                                     ' . $privaterepliessql
+                                       . $this->sql->filterbase['dates'] . '
+                               LEFT JOIN (
+                                            SELECT COUNT(fi.id) AS attcount, fi.itemid AS postid, fi.userid
+                                              FROM {files} fi
+                                             WHERE fi.component = :component
+                                               AND fi.filesize > 0
+                                          GROUP BY fi.itemid, fi.userid
+                                         ) att ON att.postid = p.id
+                                         AND att.userid = ue.userid';
 
-        $queryattachments = 'SELECT COUNT(fi.id) AS attcount, fi.itemid AS postid, fi.userid
-                               FROM {files} fi
-                              WHERE fi.component = :component AND fi.filesize > 0
-                           GROUP BY fi.itemid, fi.userid';
-        $this->sql->basefromjoins = ' {user} u
-                                 JOIN (' . $enrolleduserssql . ') enrolledusers ON enrolledusers.id = u.id
-                                 JOIN {forum} f ON f.course = :forumcourseid
-                                 JOIN {forum_discussions} d ON d.forum = f.id
-                            LEFT JOIN {forum_posts} p ON p.discussion = d.id AND p.userid = u.id '
-                                    . $privaterepliessql
-                                    . $this->sql->filterbase['dates'] . '
-                            LEFT JOIN (' . $queryattachments . ') att ON att.postid = p.id AND att.userid = u.id';
+        $this->sql->basewhere = 'e.courseid = :courseid';
 
-        $this->sql->basewhere = '1 = 1';
-        $this->sql->basegroupby = "$userfieldssql, d.course";
+        $this->sql->basegroupby = 'ue.userid, e.courseid, f.id, u.id, ' . $userfieldssql;
 
         if ($this->logreader) {
-            $this->fill_log_summary_temp_table();
+            $this->fill_log_summary_temp_table($this->context->id);
 
             $this->sql->basefields .= ', CASE WHEN tmp.viewcount IS NOT NULL THEN tmp.viewcount ELSE 0 END AS viewcount';
             $this->sql->basefromjoins .= ' LEFT JOIN {' . self::LOG_SUMMARY_TEMP_TABLE . '} tmp ON tmp.userid = u.id ';
@@ -602,12 +561,12 @@ class summary_table extends table_sql {
 
         $this->sql->params += [
             'component' => 'mod_forum',
-            'forumcourseid' => $this->courseid,
+            'courseid' => $this->cm->course,
         ] + $privaterepliesparams;
 
         // Handle if a user is limited to viewing their own summary.
         if (!empty($this->userid)) {
-            $this->sql->basewhere .= ' AND u.id = :userid';
+            $this->sql->basewhere .= ' AND ue.userid = :userid';
             $this->sql->params['userid'] = $this->userid;
         }
     }
@@ -683,10 +642,8 @@ class summary_table extends table_sql {
      * @return void.
      */
     protected function apply_filters(array $filters): void {
-        // Apply the forums filter if not reporting on every forum in a course.
-        if (!$this->accessallforums) {
-            $this->add_filter(self::FILTER_FORUM, $filters['forums']);
-        }
+        // Apply the forums filter.
+        $this->add_filter(self::FILTER_FORUM, $filters['forums']);
 
         // Apply groups filter.
         $this->add_filter(self::FILTER_GROUPS, $filters['groups']);
@@ -716,11 +673,11 @@ class summary_table extends table_sql {
 
             $groupby = ' GROUP BY ' . $this->sql->basegroupby . $this->sql->filtergroupby;
 
-            if ($sort = $this->get_sql_sort()) {
+            if (($sort = $this->get_sql_sort())) {
                 $orderby = " ORDER BY {$sort}";
             }
         } else {
-            $selectfields = 'COUNT(u.id)';
+            $selectfields = 'COUNT(DISTINCT(ue.userid))';
         }
 
         $sql = "SELECT {$selectfields}
@@ -762,9 +719,10 @@ class summary_table extends table_sql {
     /**
      * Fills the log summary temp table.
      *
+     * @param int $contextid
      * @return null
      */
-    protected function fill_log_summary_temp_table() {
+    protected function fill_log_summary_temp_table(int $contextid) {
         global $DB;
 
         $this->create_log_summary_temp_table();
@@ -782,19 +740,11 @@ class summary_table extends table_sql {
         $datewhere = $this->sql->filterbase['dateslog'] ?? '';
         $dateparams = $this->sql->filterbase['dateslogparams'] ?? [];
 
-        $contextids = [];
-
-        foreach ($this->forumcontexts as $forumcontext) {
-            $contextids[] = $forumcontext->id;
-        }
-
-        list($contextidin, $contextidparams) = $DB->get_in_or_equal($contextids, SQL_PARAMS_NAMED);
-
-        $params = $contextidparams + $dateparams;
+        $params = ['contextid' => $contextid] + $dateparams;
         $sql = "INSERT INTO {" . self::LOG_SUMMARY_TEMP_TABLE . "} (userid, viewcount)
                      SELECT userid, COUNT(*) AS viewcount
                        FROM {" . $logtable . "}
-                      WHERE contextid {$contextidin}
+                      WHERE contextid = :contextid
                             $datewhere
                             $nonanonymous
                    GROUP BY userid";
@@ -847,64 +797,42 @@ class summary_table extends table_sql {
     protected function get_filter_groups(array $groups): array {
         global $USER;
 
-        $usergroups = groups_get_all_groups($this->courseid, $USER->id);
-        $coursegroupsobj = groups_get_all_groups($this->courseid);
-        $allgroups = false;
-        $allowedgroupsobj = [];
+        $groupmode = groups_get_activity_groupmode($this->cm);
+        $aag = has_capability('moodle/site:accessallgroups', $this->context);
         $allowedgroups = [];
         $filtergroups = [];
 
-        foreach ($this->cms as $cm) {
-            // Only need to check for all groups access if not confirmed by a previous check.
-            if (!$allgroups) {
-                $groupmode = groups_get_activity_groupmode($cm);
+        // Filtering only valid if a forum groups mode is enabled.
+        if (in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
+            $allgroupsobj = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid);
+            $allgroups = [];
 
-                // If no groups mode enabled on the forum, nothing to prepare.
-                if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
-                    continue;
-                }
-
-                $aag = has_capability('moodle/site:accessallgroups', $this->forumcontexts[$cm->id]);
-
-                if ($groupmode == VISIBLEGROUPS || $aag) {
-                    $allgroups = true;
-
-                    // All groups in course fetched, no need to continue checking for others.
-                    break;
-                }
+            foreach ($allgroupsobj as $group) {
+                $allgroups[] = $group->id;
             }
-        }
 
-        if ($allgroups) {
-            $nogroups = new \stdClass();
-            $nogroups->id = -1;
-            $nogroups->name = get_string('groupsnone');
+            if ($groupmode == VISIBLEGROUPS || $aag) {
+                $nogroups = new \stdClass();
+                $nogroups->id = -1;
+                $nogroups->name = get_string('groupsnone');
 
-            // Any groups and no groups.
-            $allowedgroupsobj = $coursegroupsobj + [$nogroups];
-        } else {
-            $allowedgroupsobj = $usergroups;
-        }
-
-        foreach ($allowedgroupsobj as $group) {
-            $allowedgroups[] = $group->id;
-        }
-
-        // If not all groups in course are selected, filter by allowed groups submitted.
-        if (!empty($groups)) {
-            if (!empty(array_diff($allowedgroups, $groups))) {
-                $filtergroups = array_intersect($groups, $allowedgroups);
+                // Any groups and no groups.
+                $allowedgroupsobj = $allgroupsobj + [$nogroups];
             } else {
-                $coursegroups = [];
+                // Only assigned groups.
+                $allowedgroupsobj = groups_get_all_groups($this->cm->course, $USER->id, $this->cm->groupingid);
+            }
 
-                foreach ($coursegroupsobj as $group) {
-                    $coursegroups[] = $group->id;
-                }
+            foreach ($allowedgroupsobj as $group) {
+                $allowedgroups[] = $group->id;
+            }
 
+            // If not all groups in course are selected, filter by allowed groups submitted.
+            if (!empty($groups) && !empty(array_diff($allowedgroups, $groups))) {
+                $filtergroups = array_intersect($groups, $allowedgroups);
+            } else if (!empty(array_diff($allgroups, $allowedgroups))) {
                 // If user's 'all groups' is a subset of the course groups, filter by all groups available to them.
-                if (!empty(array_diff($coursegroups, $allowedgroups))) {
-                    $filtergroups = $allowedgroups;
-                }
+                $filtergroups = $allowedgroups;
             }
         }
 
@@ -935,21 +863,13 @@ class summary_table extends table_sql {
         global $DB;
 
         if (is_null($this->showwordcharcounts)) {
-            $forumids = [];
-
-            foreach ($this->cms as $cm) {
-                $forumids[] = $cm->instance;
-            }
-
-            list($forumidin, $forumidparams) = $DB->get_in_or_equal($forumids, SQL_PARAMS_NAMED);
-
             // This should be really fast.
             $sql = "SELECT 'x'
                       FROM {forum_posts} fp
                       JOIN {forum_discussions} fd ON fd.id = fp.discussion
-                     WHERE fd.forum {$forumidin} AND (fp.wordcount IS NULL OR fp.charcount IS NULL)";
+                     WHERE fd.forum = :forumid AND (fp.wordcount IS NULL OR fp.charcount IS NULL)";
 
-            if ($DB->record_exists_sql($sql, $forumidparams)) {
+            if ($DB->record_exists_sql($sql, ['forumid' => $this->cm->instance])) {
                 $this->showwordcharcounts = false;
             } else {
                 $this->showwordcharcounts = true;

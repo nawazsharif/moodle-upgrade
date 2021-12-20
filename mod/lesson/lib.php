@@ -162,8 +162,7 @@ function lesson_update_events($lesson, $override = null) {
 
         $event = new stdClass();
         $event->type = !$deadline ? CALENDAR_EVENT_TYPE_ACTION : CALENDAR_EVENT_TYPE_STANDARD;
-        $event->description = format_module_intro('lesson', $lesson, $cmid, false);
-        $event->format = FORMAT_HTML;
+        $event->description = format_module_intro('lesson', $lesson, $cmid);
         // Events module won't show user events when the courseid is nonzero.
         $event->courseid    = ($userid) ? 0 : $lesson->course;
         $event->groupid     = $groupid;

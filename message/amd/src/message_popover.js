@@ -40,11 +40,7 @@ function(
     /**
      * Toggle the message drawer visibility.
      *
-<<<<<<< HEAD
      * @param {String} button The button id for the popover.
-=======
-     * @param {String} buttonid The button id for the popover.
->>>>>>> remotes/origin/MOODLE_310_STABLE
      */
     var toggleMessageDrawerVisibility = function(buttonid) {
         PubSub.publish(MessageDrawerEvents.TOGGLE_VISIBILITY, buttonid);

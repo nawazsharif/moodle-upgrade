@@ -18,16 +18,15 @@
 namespace MongoDB\Operation;
 
 use MongoDB\Driver\Command;
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
+use MongoDB\Driver\Query;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Model\CachingIterator;
 use MongoDB\Model\CollectionInfoCommandIterator;
 use MongoDB\Model\CollectionInfoIterator;
-use function is_array;
-use function is_integer;
-use function is_object;
+use MongoDB\Model\CollectionInfoLegacyIterator;
 
 /**
  * Operation for the listCollections command.
@@ -38,10 +37,7 @@ use function is_object;
  */
 class ListCollections implements Executable
 {
-    /** @var string */
     private $databaseName;
-
-    /** @var array */
     private $options;
 
     /**
@@ -73,7 +69,7 @@ class ListCollections implements Executable
         }
 
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
-            throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
         }
 
         $this->databaseName = (string) $databaseName;
@@ -125,7 +121,7 @@ class ListCollections implements Executable
     {
         $cmd = ['listCollections' => 1];
 
-        if (! empty($this->options['filter'])) {
+        if ( ! empty($this->options['filter'])) {
             $cmd['filter'] = (object) $this->options['filter'];
         }
 
@@ -133,7 +129,7 @@ class ListCollections implements Executable
             $cmd['maxTimeMS'] = $this->options['maxTimeMS'];
         }
 
-        $cursor = $server->executeReadCommand($this->databaseName, new Command($cmd), $this->createOptions());
+        $cursor = $server->executeCommand($this->databaseName, new Command($cmd), $this->createOptions());
         $cursor->setTypeMap(['root' => 'array', 'document' => 'array']);
 
         return new CollectionInfoCommandIterator(new CachingIterator($cursor));

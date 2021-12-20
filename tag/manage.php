@@ -206,7 +206,6 @@ if (!$tagcoll) {
 // Tag collection is specified. Manage tags in this collection.
 echo $OUTPUT->heading(core_tag_collection::display_name($tagcoll));
 
-<<<<<<< HEAD
 // Form to filter tags.
 print('<form class="tag-filter-form" method="get" action="'.$CFG->wwwroot.'/tag/manage.php">');
 print('<div class="tag-management-form generalbox"><label class="accesshide" for="id_tagfilter">'. get_string('search') .'</label>'.
@@ -218,29 +217,6 @@ print('<div class="tag-management-form generalbox"><label class="accesshide" for
         get_string('resetfilter', 'tag'), array('class' => 'resetfilterlink')) : '').
     '</div>');
 print('</form>');
-=======
-$hiddenfields = [
-    (object) ['type' => 'hidden', 'name' => 'tc', 'value' => $tagcollid],
-    (object) ['type' => 'hidden', 'name' => 'perpage', 'value' => $perpage]
-];
-
-$otherfields = '';
-if ($filter !== '') {
-    $otherfields = html_writer::link(new moodle_url($PAGE->url, ['filter' => null]),
-        get_string('resetfilter', 'tag'));
-}
-
-$data = [
-    'action' => new moodle_url('/tag/manage.php'),
-    'hiddenfields' => $hiddenfields,
-    'inputname' => 'filter',
-    'searchstring' => get_string('search'),
-    'query' => s($filter),
-    'extraclasses' => 'mb-2',
-    'otherfields' => $otherfields
-];
-echo $OUTPUT->render_from_template('core/search_input', $data);
->>>>>>> remotes/origin/MOODLE_310_STABLE
 
 // Link to add an standard tags.
 $img = $OUTPUT->pix_icon('t/add', '');

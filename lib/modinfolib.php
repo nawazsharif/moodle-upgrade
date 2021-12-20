@@ -1312,15 +1312,9 @@ class cm_info implements IteratorAggregate {
     }
 
     /**
-     * Gets the URL to link to for this module.
-     *
-     * This method is normally called by the property ->url, but can be called directly if
-     * there is a case when it might be called recursively (you can't call property values
-     * recursively).
-     *
      * @return moodle_url URL to link to for this module, or null if it doesn't have a view page
      */
-    public function get_url() {
+    private function get_url() {
         $this->obtain_dynamic_data();
         return $this->url;
     }
@@ -1366,13 +1360,9 @@ class cm_info implements IteratorAggregate {
 
     /**
      * Getter method for property $name, ensures that dynamic data is obtained.
-     *
-     * This method is normally called by the property ->name, but can be called directly if there
-     * is a case when it might be called recursively (you can't call property values recursively).
-     *
      * @return string
      */
-    public function get_name() {
+    private function get_name() {
         $this->obtain_dynamic_data();
         return $this->name;
     }
@@ -1925,14 +1915,9 @@ class cm_info implements IteratorAggregate {
 
     /**
      * Getter method for property $uservisible, ensures that dynamic data is retrieved.
-     *
-     * This method is normally called by the property ->uservisible, but can be called directly if
-     * there is a case when it might be called recursively (you can't call property values
-     * recursively).
-     *
      * @return bool
      */
-    public function get_user_visible() {
+    private function get_user_visible() {
         $this->obtain_dynamic_data();
         return $this->uservisible;
     }

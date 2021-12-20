@@ -37,20 +37,22 @@ class behat_qtype_ddmarker extends behat_base {
 
     /**
      * Get the xpath for a given drag item.
-     *
-     * @param string $marker the text of the item to drag.
-     * @param bool $iskeyboard is using keyboard or not.
+     * @param string $dragitem the text of the item to drag.
      * @return string the xpath expression.
      */
-    protected function marker_xpath($marker, $iskeyboard = false) {
-        if ($iskeyboard) {
-            return '//span[contains(@class, "marker") and not(contains(@class, "dragplaceholder")) ' .
-                    'and span[@class = "markertext" and contains(normalize-space(.), "' .
-                    $this->escape($marker) . '")]]';
-        }
-        return '//span[contains(@class, "marker") and contains(@class, "unneeded") ' .
-                'and not(contains(@class, "dragplaceholder")) and span[@class = "markertext" and contains(normalize-space(.), "' .
+    protected function marker_xpath($marker, $item = 0) {
+        return '//span[contains(@class, " dragitem ") and contains(@class, " item' . $item .
+                '") and span[@class = "markertext" and contains(normalize-space(.), "' .
                 $this->escape($marker) . '")]]';
+    }
+
+    protected function parse_marker_name($marker) {
+        $item = 0;
+        if (preg_match('~,(\d+)$~', $marker, $matches)) {
+            $item = $matches[1];
+            $marker = substr($marker, 0, -1 - strlen($item));
+        }
+        return array($marker, $item);
     }
 
     /**
@@ -62,16 +64,13 @@ class behat_qtype_ddmarker extends behat_base {
      * @Given /^I drag "(?P<marker>[^"]*)" to "(?P<coordinates>\d+,\d+)" in the drag and drop markers question$/
      */
     public function i_drag_to_in_the_drag_and_drop_markers_question($marker, $coordinates) {
+        list($marker, $item) = $this->parse_marker_name($marker);
         list($x, $y) = explode(',', $coordinates);
 
         // This is a bit nasty, but Behat (indeed Selenium) will only drag on
         // DOM node so that its centre is over the centre of anothe DOM node.
         // Therefore to make it drag to the specified place, we have to add
         // a target div.
-<<<<<<< HEAD
-=======
-        $markerxpath = $this->marker_xpath($marker);
->>>>>>> remotes/origin/MOODLE_310_STABLE
         $this->execute_script("
                 (function() {
                     if (document.getElementById('target-{$x}-{$y}')) {
@@ -81,16 +80,10 @@ class behat_qtype_ddmarker extends behat_base {
                     var target = document.createElement('div');
                     target.setAttribute('id', 'target-{$x}-{$y}');
                     var container = document.querySelector('.droparea');
+                    container.style.setProperty('position', 'relative');
                     container.insertBefore(target, image);
-                    var widthRatio = image.offsetWidth / image.naturalWidth;
-                    var heightRatio = image.offsetHeight / image.naturalHeight;
-                    var marker = document.evaluate('{$markerxpath}', document, null, XPathResult.ANY_TYPE, null).iterateNext();
-                    var xadjusted = {$x} * widthRatio
-                                    + (container.offsetWidth - image.offsetWidth) / 2
-                                    + marker.offsetWidth / 2;
-                    var yadjusted = {$y} * heightRatio
-                                    + (container.offsetHeight - image.offsetHeight) / 2
-                                    + marker.offsetHeight / 2;
+                    var xadjusted = {$x} + (container.offsetWidth - image.offsetWidth) / 2;
+                    var yadjusted = {$y} + (container.offsetHeight - image.offsetHeight) / 2;
                     target.style.setProperty('position', 'absolute');
                     target.style.setProperty('left', xadjusted + 'px');
                     target.style.setProperty('top', yadjusted + 'px');
@@ -100,7 +93,7 @@ class behat_qtype_ddmarker extends behat_base {
         );
 
         $generalcontext = behat_context_helper::get('behat_general');
-        $generalcontext->i_drag_and_i_drop_it_in($markerxpath,
+        $generalcontext->i_drag_and_i_drop_it_in($this->marker_xpath($marker, $item),
                 'xpath_element', "#target-{$x}-{$y}", 'css_element');
     }
 
@@ -114,12 +107,8 @@ class behat_qtype_ddmarker extends behat_base {
      * @Given /^I type "(?P<direction>up|down|left|right)" "(?P<repeats>\d+)" times on marker "(?P<marker>[^"]*)" in the drag and drop markers question$/
      */
     public function i_type_on_marker_in_the_drag_and_drop_markers_question($direction, $repeats, $marker) {
-<<<<<<< HEAD
         list($marker, $item) = $this->parse_marker_name($marker);
         $node = $this->get_selected_node('xpath_element', $this->marker_xpath($marker, $item));
-=======
-        $node = $this->get_selected_node('xpath_element', $this->marker_xpath($marker, true));
->>>>>>> remotes/origin/MOODLE_310_STABLE
         $this->ensure_node_is_visible($node);
         $node->focus();
         for ($i = 0; $i < $repeats; $i++) {

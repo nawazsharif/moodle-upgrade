@@ -300,7 +300,7 @@
         $table->head = array ();
         $table->colclasses = array();
         $table->head[] = $fullnamedisplay;
-        $table->attributes['class'] = 'admintable generaltable table-sm';
+        $table->attributes['class'] = 'admintable generaltable';
         foreach ($extracolumns as $field) {
             $table->head[] = ${$field};
         }

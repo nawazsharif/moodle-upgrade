@@ -223,6 +223,8 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'city' => 'Perth',
             'url' => 'http://moodle.org',
             'country' => 'AU',
+            'lang' => 'kkl',
+            'theme' => 'kkt',
         );
         $user1 = self::getDataGenerator()->create_user($user1);
         if (!empty($CFG->usetags)) {
@@ -328,9 +330,11 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
                 if (!empty($CFG->usetags) and !empty($generateduser->interests)) {
                     $this->assertEquals(implode(', ', $generateduser->interests), $returneduser['interests']);
                 }
-                // Default language and no theme were used for the user.
-                $this->assertEquals($CFG->lang, $returneduser['lang']);
-                $this->assertEmpty($returneduser['theme']);
+                // Check empty since incorrect values were used when creating the user.
+                if ($returneduser['id'] == $user1->id) {
+                    $this->assertEmpty($returneduser['lang']);
+                    $this->assertEmpty($returneduser['theme']);
+                }
             }
         }
 
@@ -1218,9 +1222,9 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         $result = external_api::clean_returnvalue(core_user_external::update_picture_returns(), $result);
         $picture = $DB->get_field('user', 'picture', array('id' => $user->id));
         // The new revision is in the url for the user.
-        $this->assertStringContainsString($picture, $result['profileimageurl']);
+        $this->assertContains($picture, $result['profileimageurl']);
         // Check expected URL for serving the image.
-        $this->assertStringContainsString("/$contextid/user/icon", $result['profileimageurl']);
+        $this->assertContains("/$contextid/user/icon", $result['profileimageurl']);
 
         // Delete image.
         $result = core_user_external::update_picture(0, true);
@@ -1241,8 +1245,8 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         $result = external_api::clean_returnvalue(core_user_external::update_picture_returns(), $result);
         // The new revision is in the url for the user.
         $picture = $DB->get_field('user', 'picture', array('id' => $user->id));
-        $this->assertStringContainsString($picture, $result['profileimageurl']);
-        $this->assertStringContainsString("/$contextid/user/icon", $result['profileimageurl']);
+        $this->assertContains($picture, $result['profileimageurl']);
+        $this->assertContains("/$contextid/user/icon", $result['profileimageurl']);
     }
 
     /**

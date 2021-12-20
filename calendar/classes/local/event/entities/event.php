@@ -103,11 +103,6 @@ class event implements event_interface {
     protected $visible;
 
     /**
-     * @var string $component
-     */
-    protected $component;
-
-    /**
      * @var proxy_interface $subscription Subscription for this event.
      */
     protected $subscription;
@@ -129,7 +124,6 @@ class event implements event_interface {
      * @param bool                       $visible        The event's visibility. True for visible, false for invisible.
      * @param proxy_interface            $subscription   The event's subscription.
      * @param string                     $location       The event's location.
-     * @param string                     $component      The event's component.
      */
     public function __construct(
         $id,
@@ -145,8 +139,7 @@ class event implements event_interface {
         times_interface $times,
         $visible,
         proxy_interface $subscription = null,
-        $location = null,
-        $component = null
+        $location = null
     ) {
         $this->id = $id;
         $this->name = $name;
@@ -162,7 +155,6 @@ class event implements event_interface {
         $this->times = $times;
         $this->visible = $visible;
         $this->subscription = $subscription;
-        $this->component = $component;
     }
 
     public function get_id() {
@@ -219,13 +211,5 @@ class event implements event_interface {
 
     public function is_visible() {
         return $this->visible;
-    }
-
-    /**
-     * Resolved event component (frankenstyle name of activity module or the component)
-     * @return string|null
-     */
-    public function get_component() {
-        return $this->get_course_module() ? 'mod_' . $this->get_course_module()->get('modname') : $this->component;
     }
 }

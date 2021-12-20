@@ -17,6 +17,7 @@
  * This module will tie together all of the different calls the gradable module will make.
  *
  * @module     mod_forum/local/grades/grader
+ * @package    mod_forum
  * @copyright  2019 Mathew May <mathew.solutions>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -64,7 +65,7 @@ const displayUserPicker = (root, html) => {
  *
  * @param {String} html
  * @param {String} js
- * @returns {array} An array containing the HTML, and JS.
+ * @return {[*, *]}
  */
 const fetchContentFromRender = (html, js) => {
     return [html, js];
@@ -116,7 +117,6 @@ const getUpdateUserContentFunction = (root, getContentForUser, getGradeForUser, 
         if (spinner) {
             spinner.resolve();
         }
-        return userGrade;
     };
 };
 
@@ -389,13 +389,7 @@ const displayGradingError = async(root, user, err) => {
  * @param {Function} getContentForUser A function to get the content for a specific user
  * @param {Function} getGradeForUser A function get the grade details for a specific user
  * @param {Function} setGradeForUser A function to set the grade for a specific user
- * @param {Object} preferences Preferences for the launch function
- * @param {Number} preferences.initialUserId
- * @param {string} preferences.moduleName
- * @param {string} preferences.courseName
- * @param {string} preferences.courseUrl
- * @param {boolean} preferences.sendStudentNotifications
- * @param {null|HTMLElement} preferences.focusOnClose
+ * @param {Object} Preferences for the launch function
  */
 export const launch = async(getListOfUsers, getContentForUser, getGradeForUser, setGradeForUser, {
     initialUserId = null,
@@ -450,10 +444,9 @@ export const launch = async(getListOfUsers, getContentForUser, getGradeForUser, 
     // Fetch the userpicker for display.
     const userPicker = await getUserPicker(
         userList,
-        async(user) => {
-            const userGrade = await updateUserContent(user);
+        user => {
             const renderContext = {
-                status: userGrade.hasgrade,
+                status: null,
                 index: userIds.indexOf(user.id) + 1,
                 total: userList.length
             };
@@ -461,6 +454,7 @@ export const launch = async(getListOfUsers, getContentForUser, getGradeForUser, 
                 statusContainer.innerHTML = html;
                 return html;
             }).catch();
+            updateUserContent(user);
         },
         saveGradeFunction,
         {
@@ -481,8 +475,6 @@ export const launch = async(getListOfUsers, getContentForUser, getGradeForUser, 
  * @param {Function} getGradeForUser A function get the grade details for a specific user
  * @param {Number} userid The ID of a specific user
  * @param {String} moduleName the name of the module
- * @param {object} param
- * @param {null|HTMLElement} param.focusOnClose
  */
 export const view = async(getGradeForUser, userid, moduleName, {
     focusOnClose = null,

@@ -59,12 +59,8 @@ if (($hassiteconfig || has_any_capability(array(
 
     $backpacks = badges_get_site_backpacks();
     $choices = array();
-    $defaultchoice = 0;
     foreach ($backpacks as $backpack) {
         $choices[$backpack->id] = $backpack->backpackweburl;
-        if ($backpack->backpackweburl == BADGRIO_BACKPACKWEBURL) {
-            $defaultchoice = $backpack->id;
-        }
     }
 
     $globalsettings->add(new admin_setting_configcheckbox('badges_allowcoursebadges',
@@ -107,11 +103,7 @@ if (($hassiteconfig || has_any_capability(array(
     $backpacksettings->add(new admin_setting_configselect('badges_site_backpack',
             new lang_string('sitebackpack', 'badges'),
             new lang_string('sitebackpack_help', 'badges'),
-<<<<<<< HEAD
             1, $choices));
-=======
-            $defaultchoice, $choices));
->>>>>>> remotes/origin/MOODLE_310_STABLE
 
     $ADMIN->add('badges', $backpacksettings);
 

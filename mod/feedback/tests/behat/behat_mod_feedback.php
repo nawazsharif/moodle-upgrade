@@ -108,7 +108,8 @@ class behat_mod_feedback extends behat_base {
         $this->execute('behat_auth::i_log_in_as', $username);
 
         // Navigate to feedback complete form.
-        $this->execute('behat_navigation::i_am_on_page_instance', [$feedbackname, 'feedback activity']);
+        $this->execute('behat_navigation::i_am_on_course_homepage', $coursename);
+        $this->execute('behat_general::click_link', $feedbackname);
         $this->execute('behat_general::click_link', $completeform);
 
         // Fill form and submit.
@@ -164,7 +165,9 @@ class behat_mod_feedback extends behat_base {
         // If chart data is not visible then expand.
         $node = $this->get_selected_node("xpath_element", $charttabledataxpath);
         if ($node) {
-            if ($node->getAttribute('aria-expanded') === 'false') {
+            if (!$node->isVisible()) {
+                // Focus on node, before checking if it's visible.
+                $node->focus();
                 $this->execute('behat_general::i_click_on_in_the', array(
                     get_string('showchartdata'),
                     'link',

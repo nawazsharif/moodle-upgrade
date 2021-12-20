@@ -27,6 +27,12 @@ defined('MOODLE_INTERNAL') || die();
 function xmldb_logstore_standard_upgrade($oldversion) {
     global $CFG;
 
+    // Automatically generated Moodle v3.3.0 release upgrade line.
+    // Put any upgrade step following this.
+
+    // Automatically generated Moodle v3.4.0 release upgrade line.
+    // Put any upgrade step following this.
+
     // Automatically generated Moodle v3.5.0 release upgrade line.
     // Put any upgrade step following this.
 
@@ -46,14 +52,5 @@ function xmldb_logstore_standard_upgrade($oldversion) {
     // Automatically generated Moodle v3.8.0 release upgrade line.
     // Put any upgrade step following this.
 
-<<<<<<< HEAD
-=======
-    // Automatically generated Moodle v3.9.0 release upgrade line.
-    // Put any upgrade step following this.
-
-    // Automatically generated Moodle v3.10.0 release upgrade line.
-    // Put any upgrade step following this.
-
->>>>>>> remotes/origin/MOODLE_310_STABLE
     return true;
 }

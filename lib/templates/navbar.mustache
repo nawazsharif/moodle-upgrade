@@ -64,13 +64,8 @@
     }
 }}
 <nav aria-label="{{#str}}breadcrumb, access{{/str}}">
-<<<<<<< HEAD
     <ol class="breadcrumb">
         {{#get_items}}
-=======
-    <ol class="breadcrumb">{{!
-        }}{{#get_items}}
->>>>>>> remotes/origin/MOODLE_310_STABLE
             {{#has_action}}
                 <li class="breadcrumb-item{{#is_hidden}} dimmed_text{{/is_hidden}}">
                     <a href="{{{action}}}" {{#is_last}}aria-current="page"{{/is_last}} {{#get_title}}title="{{get_title}}"{{/get_title}}>{{{get_content}}}</a>
@@ -79,6 +74,6 @@
             {{^has_action}}
                 <li class="breadcrumb-item{{#is_hidden}} dimmed_text{{/is_hidden}}">{{{text}}}</li>
             {{/has_action}}
-        {{/get_items}}{{!
-    }}</ol>
+        {{/get_items}}
+    </ol>
 </nav>

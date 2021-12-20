@@ -18,15 +18,12 @@
 namespace MongoDB\Operation;
 
 use MongoDB\Driver\Command;
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
-use function current;
-use function is_array;
-use function MongoDB\server_supports_feature;
 
 /**
  * Operation for the dropDatabase command.
@@ -38,13 +35,9 @@ use function MongoDB\server_supports_feature;
  */
 class DropDatabase implements Executable
 {
-    /** @var integer */
     private static $wireVersionForWriteConcern = 5;
 
-    /** @var string */
     private $databaseName;
-
-    /** @var array */
     private $options;
 
     /**
@@ -71,7 +64,7 @@ class DropDatabase implements Executable
     public function __construct($databaseName, array $options = [])
     {
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
-            throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
         }
 
         if (isset($options['typeMap']) && ! is_array($options['typeMap'])) {
@@ -79,7 +72,7 @@ class DropDatabase implements Executable
         }
 
         if (isset($options['writeConcern']) && ! $options['writeConcern'] instanceof WriteConcern) {
-            throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], WriteConcern::class);
+            throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], 'MongoDB\Driver\WriteConcern');
         }
 
         if (isset($options['writeConcern']) && $options['writeConcern']->isDefault()) {
@@ -101,7 +94,7 @@ class DropDatabase implements Executable
      */
     public function execute(Server $server)
     {
-        if (isset($this->options['writeConcern']) && ! server_supports_feature($server, self::$wireVersionForWriteConcern)) {
+        if (isset($this->options['writeConcern']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForWriteConcern)) {
             throw UnsupportedException::writeConcernNotSupported();
         }
 

@@ -76,9 +76,7 @@ class restore_course_task extends restore_task {
             }
         }
 
-        if ($this->get_setting_value('legacyfiles')) {
-            $this->add_step(new restore_course_legacy_files_step('legacy_files'));
-        }
+        $this->add_step(new restore_course_legacy_files_step('legacy_files'));
 
         // Deal with enrolment methods and user enrolments.
         if ($this->plan->get_mode() == backup::MODE_IMPORT) {
@@ -127,11 +125,6 @@ class restore_course_task extends restore_task {
 
         // Activity completion defaults.
         $this->add_step(new restore_completion_defaults_structure_step('course_completion_defaults', 'completiondefaults.xml'));
-
-        // Content bank content (conditionally).
-        if ($this->get_setting_value('contentbankcontent')) {
-            $this->add_step(new restore_contentbankcontent_structure_step('course_contentbank', 'contentbank.xml'));
-        }
 
         // At the end, mark it as built
         $this->built = true;

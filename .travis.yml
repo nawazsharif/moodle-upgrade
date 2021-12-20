@@ -10,11 +10,7 @@ language: php
 
 os: linux
 
-<<<<<<< HEAD
 dist: xenial
-=======
-dist: bionic
->>>>>>> remotes/origin/MOODLE_310_STABLE
 
 services:
     - mysql
@@ -23,15 +19,6 @@ services:
 addons:
   postgresql: "9.6"
 
-<<<<<<< HEAD
-=======
-branches:
-  except:
-    - master
-    - /MOODLE_[0-9]+_STABLE/
-    - /^v[0-9]+\.[0-9]+\.[0-9]+.*/
-
->>>>>>> remotes/origin/MOODLE_310_STABLE
 jobs:
     # Enable fast finish.
     # This will fail the build if a single job fails (except those in allow_failures).
@@ -39,7 +26,6 @@ jobs:
     fast_finish: true
 
     include:
-<<<<<<< HEAD
         # First all the lowest php ones (7.1.30)
         # Make this sticky because current default version (7.1.11) has a bug with redis-extension output (MDL-66062)
         - php: 7.1.30
@@ -53,20 +39,6 @@ jobs:
 
         - if: env(MOODLE_DATABASE) = "mysqli" OR env(MOODLE_DATABASE) = "all"
           php: 7.1.30
-=======
-        # First all the lowest php ones (7.2)
-        - php: 7.2
-          env: DB=none     TASK=CITEST
-        - php: 7.2
-          env: DB=none     TASK=GRUNT    NVM_VERSION='lts/carbon'
-
-        - if: env(MOODLE_DATABASE) = "pgsql" OR env(MOODLE_DATABASE) = "all" OR env(MOODLE_DATABASE) IS NOT present
-          php: 7.2
-          env: DB=pgsql    TASK=PHPUNIT
-
-        - if: env(MOODLE_DATABASE) = "mysqli" OR env(MOODLE_DATABASE) = "all"
-          php: 7.2
->>>>>>> remotes/origin/MOODLE_310_STABLE
           env: DB=mysqli   TASK=PHPUNIT
 
         # Then, conditionally, all the highest php ones (7.4)
@@ -243,7 +215,7 @@ before_script:
         # We need the official upstream for comparison
         git remote add upstream https://github.com/moodle/moodle.git;
 
-        git fetch upstream MOODLE_310_STABLE;
+        git fetch upstream MOODLE_38_STABLE;
         export GIT_PREVIOUS_COMMIT="`git merge-base FETCH_HEAD $TRAVIS_COMMIT`";
         export GIT_COMMIT="$TRAVIS_COMMIT";
         export UPSTREAM_FETCH_HEAD=`git rev-parse FETCH_HEAD`

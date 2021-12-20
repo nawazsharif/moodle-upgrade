@@ -2229,7 +2229,7 @@ function readfile_accel($file, $mimetype, $accelerate) {
         if (is_object($file)) {
             $fs = get_file_storage();
             if ($fs->supports_xsendfile()) {
-                if ($fs->xsendfile_file($file)) {
+                if ($fs->xsendfile($file->get_contenthash())) {
                     return;
                 }
             }
@@ -2279,38 +2279,22 @@ function readfile_accel($file, $mimetype, $accelerate) {
             if ($ranges) {
                 if (is_object($file)) {
                     $handle = $file->get_content_file_handle();
-                    if ($handle === false) {
-                        throw new file_exception('storedfilecannotreadfile', $file->get_filename());
-                    }
                 } else {
                     $handle = fopen($file, 'rb');
-                    if ($handle === false) {
-                        throw new file_exception('cannotopenfile', $file);
-                    }
                 }
                 byteserving_send_file($handle, $mimetype, $ranges, $filesize);
             }
         }
     }
 
-    header('Content-Length: ' . $filesize);
+    header('Content-Length: '.$filesize);
 
-    if (!empty($_SERVER['REQUEST_METHOD']) and $_SERVER['REQUEST_METHOD'] === 'HEAD') {
-        exit;
-    }
-
-    while (ob_get_level()) {
-        $handlerstack = ob_list_handlers();
-        $activehandler = array_pop($handlerstack);
-        if ($activehandler === 'default output handler') {
-            // We do not expect any content in the buffer when we are serving files.
-            $buffercontents = ob_get_clean();
-            if ($buffercontents !== '') {
-                error_log('Non-empty default output handler buffer detected while serving the file ' . $file);
+    if ($filesize > 10000000) {
+        // for large files try to flush and close all buffers to conserve memory
+        while(@ob_get_level()) {
+            if (!@ob_end_flush()) {
+                break;
             }
-        } else {
-            // Some handlers such as zlib output compression may have file signature buffered - flush it.
-            ob_end_flush();
         }
     }
 
@@ -2318,9 +2302,7 @@ function readfile_accel($file, $mimetype, $accelerate) {
     if (is_object($file)) {
         $file->readfile();
     } else {
-        if (readfile_allow_large($file, $filesize) === false) {
-            throw new file_exception('cannotopenfile', $file);
-        }
+        readfile_allow_large($file, $filesize);
     }
 }
 
@@ -2499,9 +2481,6 @@ function file_safe_save_content($content, $destination) {
  * @param array $options An array of options, currently accepts:
  *                       - (string) cacheability: public, or private.
  *                       - (string|null) immutable
- *                       - (bool) dontforcesvgdownload: true if force download should be disabled on SVGs.
- *                                Note: This overrides a security feature, so should only be applied to "trusted" content
- *                                (eg module content that is created using an XSS risk flagged capability, such as SCORM).
  * @return null script execution stopped unless $dontdie is true
  */
 function send_file($path, $filename, $lifetime = null , $filter=0, $pathisstring=false, $forcedownload=false, $mimetype='',
@@ -2530,12 +2509,6 @@ function send_file($path, $filename, $lifetime = null , $filter=0, $pathisstring
     // if user is using IE, urlencode the filename so that multibyte file name will show up correctly on popup
     if (core_useragent::is_ie() || core_useragent::is_edge()) {
         $filename = rawurlencode($filename);
-    }
-
-    // Make sure we force download of SVG files, unless the module explicitly allows them (eg within SCORM content).
-    // This is for security reasons (https://digi.ninja/blog/svg_xss.php).
-    if (file_is_svg_image_from_mimetype($mimetype) && empty($options['dontforcesvgdownload'])) {
-        $forcedownload = true;
     }
 
     if ($forcedownload) {
@@ -2598,7 +2571,7 @@ function send_file($path, $filename, $lifetime = null , $filter=0, $pathisstring
 
     } else {
         // Try to put the file through filters
-        if ($mimetype == 'text/html' || $mimetype == 'application/xhtml+xml' || file_is_svg_image_from_mimetype($mimetype)) {
+        if ($mimetype == 'text/html' || $mimetype == 'application/xhtml+xml') {
             $options = new stdClass();
             $options->noclean = true;
             $options->nocache = true; // temporary workaround for MDL-5136
@@ -3028,16 +3001,6 @@ function file_merge_draft_area_into_draft_area($getfromdraftid, $mergeintodrafti
 }
 
 /**
- * Attempt to determine whether the specified mime-type is an SVG image or not.
- *
- * @param string $mimetype Mime-type
- * @return bool True if it is an SVG file
- */
-function file_is_svg_image_from_mimetype(string $mimetype): bool {
-    return preg_match('|^image/svg|', $mimetype);
-}
-
-/**
  * RESTful cURL class
  *
  * This is a wrapper class for curl, it is quite easy to use:
@@ -3082,7 +3045,7 @@ class curl {
     public  $error;
     /** @var int error code */
     public  $errno;
-    /** @var bool Perform redirects at PHP level instead of relying on native cURL functionality. Always true now. */
+    /** @var bool use workaround for open_basedir restrictions, to be changed from unit tests only! */
     public $emulateredirects = null;
 
     /** @var array cURL options */
@@ -3100,7 +3063,7 @@ class curl {
     private $cookie   = false;
     /** @var bool tracks multiple headers in response - redirect detection */
     private $responsefinished = false;
-    /** @var security helper class, responsible for checking host/ports against allowed/blocked entries.*/
+    /** @var security helper class, responsible for checking host/ports against blacklist/whitelist entries.*/
     private $securityhelper;
     /** @var bool ignoresecurity a flag which can be supplied to the constructor, allowing security to be bypassed. */
     private $ignoresecurity;
@@ -3179,13 +3142,9 @@ class curl {
             $this->proxy = false;
         }
 
-        // All redirects are performed at PHP level now and each one is checked against blocked URLs rules. We do not
-        // want to let cURL naively follow the redirect chain and visit every URL for security reasons. Even when the
-        // caller explicitly wants to ignore the security checks, we would need to fall back to the original
-        // implementation and use emulated redirects if open_basedir is in effect to avoid the PHP warning
-        // "CURLOPT_FOLLOWLOCATION cannot be activated when in safe_mode or an open_basedir". So it is better to simply
-        // ignore this property and always handle redirects at this PHP wrapper level and not inside the native cURL.
-        $this->emulateredirects = true;
+        if (!isset($this->emulateredirects)) {
+            $this->emulateredirects = ini_get('open_basedir');
+        }
 
         // Curl security setup. Allow injection of a security helper, but if not found, default to the core helper.
         if (isset($settings['securityhelper']) && $settings['securityhelper'] instanceof \core\files\curl_security_helper_base) {
@@ -3494,8 +3453,8 @@ class curl {
 
         // Set options.
         foreach($this->options as $name => $val) {
-            if ($name === 'CURLOPT_FOLLOWLOCATION') {
-                // All the redirects are emulated at PHP level.
+            if ($name === 'CURLOPT_FOLLOWLOCATION' and $this->emulateredirects) {
+                // The redirects are emulated elsewhere.
                 curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 0);
                 continue;
             }
@@ -3657,7 +3616,7 @@ class curl {
      * @return bool
      */
     protected function request($url, $options = array()) {
-        // Reset here so that the data is valid when result returned from cache, or if we return due to a blocked URL hit.
+        // Reset here so that the data is valid when result returned from cache, or if we return due to a blacklist hit.
         $this->reset_request_state_vars();
 
         if ((defined('PHPUNIT_TEST') && PHPUNIT_TEST)) {
@@ -3667,12 +3626,8 @@ class curl {
             }
         }
 
-        if (empty($this->emulateredirects)) {
-            // Just in case someone had tried to explicitly disable emulated redirects in legacy code.
-            debugging('Attempting to disable emulated redirects has no effect any more!', DEBUG_DEVELOPER);
-        }
-
-        // If curl security is enabled, check the URL against the list of blocked URLs before calling the first curl_exec.
+        // If curl security is enabled, check the URL against the blacklist before calling curl_exec.
+        // Note: This will only check the base url. In the case of redirects, the blacklist is also after the curl_exec.
         if (!$this->ignoresecurity && $this->securityhelper->url_is_blocked($url)) {
             $this->error = $this->securityhelper->get_blocked_url_string();
             return $this->error;
@@ -3695,14 +3650,16 @@ class curl {
         $this->errno = curl_errno($curl);
         // Note: $this->response and $this->rawresponse are filled by $hits->formatHeader callback.
 
-        if (intval($this->info['redirect_count']) > 0) {
-            // For security reasons we do not allow the cURL handle to follow redirects on its own.
-            // See setting CURLOPT_FOLLOWLOCATION in {@see self::apply_opt()} method.
-            throw new coding_exception('Internal cURL handle should never follow redirects on its own!',
-                'Reported number of redirects: ' . $this->info['redirect_count']);
+        // In the case of redirects (which curl blindly follows), check the post-redirect URL against the blacklist entries too.
+        if (intval($this->info['redirect_count']) > 0 && !$this->ignoresecurity
+            && $this->securityhelper->url_is_blocked($this->info['url'])) {
+            $this->reset_request_state_vars();
+            $this->error = $this->securityhelper->get_blocked_url_string();
+            curl_close($curl);
+            return $this->error;
         }
 
-        if ($this->options['CURLOPT_FOLLOWLOCATION'] && $this->info['http_code'] != 200) {
+        if ($this->emulateredirects and $this->options['CURLOPT_FOLLOWLOCATION'] and $this->info['http_code'] != 200) {
             $redirects = 0;
 
             while($redirects <= $this->options['CURLOPT_MAXREDIRS']) {
@@ -3736,12 +3693,6 @@ class curl {
                 if (isset($this->info['redirect_url'])) {
                     if (preg_match('|^https?://|i', $this->info['redirect_url'])) {
                         $redirecturl = $this->info['redirect_url'];
-                    } else {
-                        // Emulate CURLOPT_REDIR_PROTOCOLS behaviour which we have set to (CURLPROTO_HTTP | CURLPROTO_HTTPS) only.
-                        $this->errno = CURLE_UNSUPPORTED_PROTOCOL;
-                        $this->error = 'Redirect to a URL with unsuported protocol: ' . $this->info['redirect_url'];
-                        curl_close($curl);
-                        return $this->error;
                     }
                 }
                 if (!$redirecturl) {
@@ -3769,13 +3720,6 @@ class curl {
                             $redirecturl = dirname($current).'/'.$redirecturl;
                         }
                     }
-                }
-
-                if (!$this->ignoresecurity && $this->securityhelper->url_is_blocked($redirecturl)) {
-                    $this->reset_request_state_vars();
-                    $this->error = $this->securityhelper->get_blocked_url_string();
-                    curl_close($curl);
-                    return $this->error;
                 }
 
                 curl_setopt($curl, CURLOPT_URL, $redirecturl);
@@ -4626,15 +4570,33 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null, $offlin
 
             $userid = $context->instanceid;
 
-            if (!empty($CFG->forceloginforprofiles)) {
-                require_once("{$CFG->dirroot}/user/lib.php");
+            if ($USER->id == $userid) {
+                // always can access own
 
+            } else if (!empty($CFG->forceloginforprofiles)) {
                 require_login();
 
-                // Verify the current user is able to view the profile of the supplied user anywhere.
-                $user = core_user::get_user($userid);
-                if (!user_can_view_profile($user, null, $context)) {
+                if (isguestuser()) {
                     send_file_not_found();
+                }
+
+                // we allow access to site profile of all course contacts (usually teachers)
+                if (!has_coursecontact_role($userid) && !has_capability('moodle/user:viewdetails', $context)) {
+                    send_file_not_found();
+                }
+
+                $canview = false;
+                if (has_capability('moodle/user:viewdetails', $context)) {
+                    $canview = true;
+                } else {
+                    $courses = enrol_get_my_courses();
+                }
+
+                while (!$canview && count($courses) > 0) {
+                    $course = array_shift($courses);
+                    if (has_capability('moodle/user:viewdetails', context_course::instance($course->id))) {
+                        $canview = true;
+                    }
                 }
             }
 
@@ -4656,14 +4618,23 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null, $offlin
             }
 
             if (!empty($CFG->forceloginforprofiles)) {
-                require_once("{$CFG->dirroot}/user/lib.php");
-
                 require_login();
+                if (isguestuser()) {
+                    print_error('noguest');
+                }
 
-                // Verify the current user is able to view the profile of the supplied user in current course.
-                $user = core_user::get_user($userid);
-                if (!user_can_view_profile($user, $course, $usercontext)) {
-                    send_file_not_found();
+                //TODO: review this logic of user profile access prevention
+                if (!has_coursecontact_role($userid) and !has_capability('moodle/user:viewdetails', $usercontext)) {
+                    print_error('usernotavailable');
+                }
+                if (!has_capability('moodle/user:viewdetails', $context) && !has_capability('moodle/user:viewdetails', $usercontext)) {
+                    print_error('cannotviewprofile');
+                }
+                if (!is_enrolled($context, $userid)) {
+                    print_error('notenrolledprofile');
+                }
+                if (groups_get_course_groupmode($course) == SEPARATEGROUPS and !has_capability('moodle/site:accessallgroups', $context)) {
+                    print_error('groupnotamember');
                 }
             }
 
@@ -4982,29 +4953,8 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null, $offlin
             \core\session\manager::write_close(); // Unlock session during file serving.
             send_stored_file($file, 60*60, 0, $forcedownload, $sendfileoptions);
         }
-    } else if ($component === 'contentbank') {
-        if ($filearea != 'public' || isguestuser()) {
-            send_file_not_found();
-        }
 
-        if ($context->contextlevel == CONTEXT_SYSTEM || $context->contextlevel == CONTEXT_COURSECAT) {
-            require_login();
-        } else if ($context->contextlevel == CONTEXT_COURSE) {
-            require_login($course);
-        } else {
-            send_file_not_found();
-        }
-
-        $itemid = (int)array_shift($args);
-        $filename = array_pop($args);
-        $filepath = $args ? '/'.implode('/', $args).'/' : '/';
-        if (!$file = $fs->get_file($context->id, $component, $filearea, $itemid, $filepath, $filename) or
-            $file->is_directory()) {
-            send_file_not_found();
-        }
-
-        \core\session\manager::write_close(); // Unlock session during file serving.
-        send_stored_file($file, 0, 0, true, $sendfileoptions); // must force download - security!
+        // ========================================================================================================================
     } else if (strpos($component, 'mod_') === 0) {
         $modname = substr($component, 4);
         if (!file_exists("$CFG->dirroot/mod/$modname/lib.php")) {

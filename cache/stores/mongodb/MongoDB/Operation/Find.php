@@ -18,23 +18,15 @@
 namespace MongoDB\Operation;
 
 use MongoDB\Driver\Cursor;
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Query;
 use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
-use function is_array;
-use function is_bool;
-use function is_integer;
-use function is_object;
-use function is_string;
-use function MongoDB\server_supports_feature;
-use function trigger_error;
-use const E_USER_DEPRECATED;
-
+use MongoDB\Model\BSONDocument;
 /**
  * Operation for the find command.
  *
@@ -49,22 +41,12 @@ class Find implements Executable, Explainable
     const TAILABLE = 2;
     const TAILABLE_AWAIT = 3;
 
-    /** @var integer */
     private static $wireVersionForCollation = 5;
-
-    /** @var integer */
     private static $wireVersionForReadConcern = 4;
 
-    /** @var string */
     private $databaseName;
-
-    /** @var string */
     private $collectionName;
-
-    /** @var array|object */
     private $filter;
-
-    /** @var array */
     private $options;
 
     /**
@@ -165,7 +147,7 @@ class Find implements Executable, Explainable
      */
     public function __construct($databaseName, $collectionName, $filter, array $options = [])
     {
-        if (! is_array($filter) && ! is_object($filter)) {
+        if ( ! is_array($filter) && ! is_object($filter)) {
             throw InvalidArgumentException::invalidType('$filter', $filter, 'array or object');
         }
 
@@ -186,7 +168,7 @@ class Find implements Executable, Explainable
         }
 
         if (isset($options['cursorType'])) {
-            if (! is_integer($options['cursorType'])) {
+            if ( ! is_integer($options['cursorType'])) {
                 throw InvalidArgumentException::invalidType('"cursorType" option', $options['cursorType'], 'integer');
             }
 
@@ -242,11 +224,11 @@ class Find implements Executable, Explainable
         }
 
         if (isset($options['readConcern']) && ! $options['readConcern'] instanceof ReadConcern) {
-            throw InvalidArgumentException::invalidType('"readConcern" option', $options['readConcern'], ReadConcern::class);
+            throw InvalidArgumentException::invalidType('"readConcern" option', $options['readConcern'], 'MongoDB\Driver\ReadConcern');
         }
 
         if (isset($options['readPreference']) && ! $options['readPreference'] instanceof ReadPreference) {
-            throw InvalidArgumentException::invalidType('"readPreference" option', $options['readPreference'], ReadPreference::class);
+            throw InvalidArgumentException::invalidType('"readPreference" option', $options['readPreference'], 'MongoDB\Driver\ReadPreference');
         }
 
         if (isset($options['returnKey']) && ! is_bool($options['returnKey'])) {
@@ -254,7 +236,7 @@ class Find implements Executable, Explainable
         }
 
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
-            throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
         }
 
         if (isset($options['showRecordId']) && ! is_bool($options['showRecordId'])) {
@@ -306,17 +288,12 @@ class Find implements Executable, Explainable
      */
     public function execute(Server $server)
     {
-        if (isset($this->options['collation']) && ! server_supports_feature($server, self::$wireVersionForCollation)) {
+        if (isset($this->options['collation']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForCollation)) {
             throw UnsupportedException::collationNotSupported();
         }
 
-        if (isset($this->options['readConcern']) && ! server_supports_feature($server, self::$wireVersionForReadConcern)) {
+        if (isset($this->options['readConcern']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForReadConcern)) {
             throw UnsupportedException::readConcernNotSupported();
-        }
-
-        $inTransaction = isset($this->options['session']) && $this->options['session']->isInTransaction();
-        if ($inTransaction && isset($this->options['readConcern'])) {
-            throw UnsupportedException::readConcernNotSupportedInTransaction();
         }
 
         $cursor = $server->executeQuery($this->databaseName . '.' . $this->collectionName, new Query($this->filter, $this->createQueryOptions()), $this->createExecuteOptions());
@@ -364,7 +341,7 @@ class Find implements Executable, Explainable
         ];
 
         foreach ($modifierFallback as $modifier) {
-            if (! isset($options[$modifier[0]]) && isset($options['modifiers'][$modifier[1]])) {
+            if ( ! isset($options[$modifier[0]]) && isset($options['modifiers'][$modifier[1]])) {
                 $options[$modifier[0]] = $options['modifiers'][$modifier[1]];
             }
         }
@@ -430,7 +407,7 @@ class Find implements Executable, Explainable
 
         $modifiers = empty($this->options['modifiers']) ? [] : (array) $this->options['modifiers'];
 
-        if (! empty($modifiers)) {
+        if ( ! empty($modifiers)) {
             $options['modifiers'] = $modifiers;
         }
 

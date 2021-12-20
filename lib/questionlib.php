@@ -138,20 +138,10 @@ function questions_in_use($questionids) {
     // Finally check legacy callback.
     $legacycallbacks = get_plugin_list_with_function('mod', 'question_list_instances');
     foreach ($legacycallbacks as $plugin => $function) {
-<<<<<<< HEAD
         if (isset($callbacksbytype['mod'][substr($plugin, 4)])) {
             continue; // Already done.
         }
 
-=======
-        debugging($plugin . ' implements deprecated method ' . $function .
-                '. ' . $plugin . '_questions_in_use should be implemented instead.', DEBUG_DEVELOPER);
-
-        if (isset($callbacksbytype['mod'][substr($plugin, 4)])) {
-            continue; // Already done.
-        }
-
->>>>>>> remotes/origin/MOODLE_310_STABLE
         foreach ($questionids as $questionid) {
             if (!empty($function($questionid))) {
                 return true;
@@ -409,12 +399,17 @@ function question_delete_question($questionid) {
 /**
  * All question categories and their questions are deleted for this context id.
  *
- * @param int $contextid The contextid to delete question categories from
- * @return array only returns an empty array for backwards compatibility.
+ * @param object $contextid The contextid to delete question categories from
+ * @return array Feedback from deletes (if any)
  */
 function question_delete_context($contextid) {
     global $DB;
 
+    //To store feedback to be showed at the end of the process
+    $feedbackdata   = array();
+
+    //Cache some strings
+    $strcatdeleted = get_string('unusedcategorydeleted', 'question');
     $fields = 'id, parent, name, contextid';
     if ($categories = $DB->get_records('question_categories', array('contextid' => $contextid), 'parent', $fields)) {
         //Sort categories following their tree (parent-child) relationships
@@ -423,21 +418,32 @@ function question_delete_context($contextid) {
 
         foreach ($categories as $category) {
             question_category_delete_safe($category);
+
+            //Fill feedback
+            $feedbackdata[] = array($category->name, $strcatdeleted);
         }
     }
-    return [];
+    return $feedbackdata;
 }
 
 /**
  * All question categories and their questions are deleted for this course.
  *
  * @param stdClass $course an object representing the activity
- * @param bool $notused this argument is not used any more. Kept for backwards compatibility.
- * @return bool always true.
+ * @param boolean $feedback to specify if the process must output a summary of its work
+ * @return boolean
  */
-function question_delete_course($course, $notused = false) {
+function question_delete_course($course, $feedback=true) {
     $coursecontext = context_course::instance($course->id);
-    question_delete_context($coursecontext->id);
+    $feedbackdata = question_delete_context($coursecontext->id, $feedback);
+
+    // Inform about changes performed if feedback is enabled.
+    if ($feedback && $feedbackdata) {
+        $table = new html_table();
+        $table->head = array(get_string('category', 'question'), get_string('action'));
+        $table->data = $feedbackdata;
+        echo html_writer::table($table);
+    }
     return true;
 }
 
@@ -446,18 +452,26 @@ function question_delete_course($course, $notused = false) {
  * 1/ All question categories and their questions are deleted for this course category.
  * 2/ All questions are moved to new category
  *
- * @param stdClass|core_course_category $category course category object
- * @param stdClass|core_course_category $newcategory empty means everything deleted, otherwise id of
+ * @param object|core_course_category $category course category object
+ * @param object|core_course_category $newcategory empty means everything deleted, otherwise id of
  *      category where content moved
- * @param bool $notused this argument is no longer used. Kept for backwards compatibility.
+ * @param boolean $feedback to specify if the process must output a summary of its work
  * @return boolean
  */
-function question_delete_course_category($category, $newcategory, $notused=false) {
-    global $DB;
+function question_delete_course_category($category, $newcategory, $feedback=true) {
+    global $DB, $OUTPUT;
 
     $context = context_coursecat::instance($category->id);
     if (empty($newcategory)) {
-        question_delete_context($context->id);
+        $feedbackdata = question_delete_context($context->id, $feedback);
+
+        // Output feedback if requested.
+        if ($feedback && $feedbackdata) {
+            $table = new html_table();
+            $table->head = array(get_string('questioncategory', 'question'), get_string('action'));
+            $table->data = $feedbackdata;
+            echo html_writer::table($table);
+        }
 
     } else {
         // Move question categories to the new context.
@@ -473,6 +487,14 @@ function question_delete_course_category($category, $newcategory, $notused=false
             $DB->set_field('question_categories', 'parent', $newtopcategory->id, array('parent' => $topcategory->id));
             // Now delete the top category.
             $DB->delete_records('question_categories', array('id' => $topcategory->id));
+        }
+
+        if ($feedback) {
+            $a = new stdClass();
+            $a->oldplace = $context->get_context_name();
+            $a->newplace = $newcontext->get_context_name();
+            echo $OUTPUT->notification(
+                    get_string('movedquestionsandcategories', 'question', $a), 'notifysuccess');
         }
     }
 
@@ -517,14 +539,21 @@ function question_save_from_deletion($questionids, $newcontextid, $oldplace,
  * All question categories and their questions are deleted for this activity.
  *
  * @param object $cm the course module object representing the activity
- * @param bool $notused the argument is not used any more. Kept for backwards compatibility.
+ * @param boolean $feedback to specify if the process must output a summary of its work
  * @return boolean
  */
-function question_delete_activity($cm, $notused = false) {
+function question_delete_activity($cm, $feedback=true) {
     global $DB;
 
     $modcontext = context_module::instance($cm->id);
-    question_delete_context($modcontext->id);
+    $feedbackdata = question_delete_context($modcontext->id, $feedback);
+    // Inform about changes performed if feedback is enabled.
+    if ($feedback && $feedbackdata) {
+        $table = new html_table();
+        $table->head = array(get_string('category', 'question'), get_string('action'));
+        $table->data = $feedbackdata;
+        echo html_writer::table($table);
+    }
     return true;
 }
 
@@ -1229,7 +1258,7 @@ function add_indented_names($categories, $nochildrenof = -1) {
 function question_category_select_menu($contexts, $top = false, $currentcat = 0,
         $selected = "", $nochildrenof = -1) {
     $categoriesarray = question_category_options($contexts, $top, $currentcat,
-            false, $nochildrenof, false);
+            false, $nochildrenof);
     if ($selected) {
         $choose = '';
     } else {
@@ -1393,11 +1422,10 @@ function get_categories_for_contexts($contexts, $sortorder = 'parent, sortorder,
  * @param int $currentcat
  * @param bool $popupform
  * @param int $nochildrenof
- * @param boolean $escapecontextnames Whether the returned name of the thing is to be HTML escaped or not.
  * @return array
  */
 function question_category_options($contexts, $top = false, $currentcat = 0,
-        $popupform = false, $nochildrenof = -1, $escapecontextnames = true) {
+        $popupform = false, $nochildrenof = -1) {
     global $CFG;
     $pcontexts = array();
     foreach ($contexts as $context) {
@@ -1418,7 +1446,7 @@ function question_category_options($contexts, $top = false, $currentcat = 0,
     $categoriesarray = array();
     foreach ($pcontexts as $contextid) {
         $context = context::instance_by_id($contextid);
-        $contextstring = $context->get_context_name(true, true, $escapecontextnames);
+        $contextstring = $context->get_context_name(true, true);
         foreach ($categories as $category) {
             if ($category->contextid == $contextid) {
                 $cid = $category->id;
@@ -1476,15 +1504,14 @@ function question_add_context_in_key($categories) {
  * Finds top categories in the given categories hierarchy and replace their name with a proper localised string.
  *
  * @param array $categories An array of question categories.
- * @param boolean $escape Whether the returned name of the thing is to be HTML escaped or not.
  * @return array The same question category list given to the function, with the top category names being translated.
  */
-function question_fix_top_names($categories, $escape = true) {
+function question_fix_top_names($categories) {
 
     foreach ($categories as $id => $category) {
         if ($category->parent == 0) {
             $context = context::instance_by_id($category->contextid);
-            $categories[$id]->name = get_string('topfor', 'question', $context->get_context_name(false, false, $escape));
+            $categories[$id]->name = get_string('topfor', 'question', $context->get_context_name(false));
         }
     }
 
@@ -2357,42 +2384,4 @@ function question_module_uses_questions($modname) {
     }
 
     return false;
-}
-
-/**
- * If $oldidnumber ends in some digits then return the next available idnumber of the same form.
- *
- * So idnum -> null (no digits at the end) idnum0099 -> idnum0100 (if that is unused,
- * else whichever of idnum0101, idnume0102, ... is unused. idnum9 -> idnum10.
- *
- * @param string|null $oldidnumber a question idnumber, or can be null.
- * @param int $categoryid a question category id.
- * @return string|null suggested new idnumber for a question in that category, or null if one cannot be found.
- */
-function core_question_find_next_unused_idnumber(?string $oldidnumber, int $categoryid): ?string {
-    global $DB;
-
-    // The the old idnumber is not of the right form, bail now.
-    if (!preg_match('~\d+$~', $oldidnumber, $matches)) {
-        return null;
-    }
-
-    // Find all used idnumbers in one DB query.
-    $usedidnumbers = $DB->get_records_select_menu('question', 'category = ? AND idnumber IS NOT NULL',
-            [$categoryid], '', 'idnumber, 1');
-
-    // Find the next unused idnumber.
-    $numberbit = 'X' . $matches[0]; // Need a string here so PHP does not do '0001' + 1 = 2.
-    $stem = substr($oldidnumber, 0, -strlen($matches[0]));
-    do {
-
-        // If we have got to something9999, insert an extra digit before incrementing.
-        if (preg_match('~^(.*[^0-9])(9+)$~', $numberbit, $matches)) {
-            $numberbit = $matches[1] . '0' . $matches[2];
-        }
-        $numberbit++;
-        $newidnumber = $stem . substr($numberbit, 1);
-    } while (isset($usedidnumbers[$newidnumber]));
-
-    return (string) $newidnumber;
 }

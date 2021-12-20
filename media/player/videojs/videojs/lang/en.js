@@ -46,7 +46,7 @@ videojs.addLanguage('en', {
   ", opens descriptions settings dialog": ", opens descriptions settings dialog",
   ", selected": ", selected",
   "captions settings": "captions settings",
-  "subtitles settings": "subtitles settings",
+  "subtitles settings": "subititles settings",
   "descriptions settings": "descriptions settings",
   "Text": "Text",
   "White": "White",
@@ -83,7 +83,5 @@ videojs.addLanguage('en', {
   "Caption Settings Dialog": "Caption Settings Dialog",
   "Beginning of dialog window. Escape will cancel and close the window.": "Beginning of dialog window. Escape will cancel and close the window.",
   "End of dialog window.": "End of dialog window.",
-  "{1} is loading.": "{1} is loading.",
-  "Exit Picture-in-Picture": "Exit Picture-in-Picture",
-  "Picture-in-Picture": "Picture-in-Picture"
+  "{1} is loading.": "{1} is loading."
 });

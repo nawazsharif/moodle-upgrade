@@ -17,13 +17,7 @@
 
 namespace MongoDB\Exception;
 
-use MongoDB\Driver\Exception\InvalidArgumentException as DriverInvalidArgumentException;
-use function get_class;
-use function gettype;
-use function is_object;
-use function sprintf;
-
-class InvalidArgumentException extends DriverInvalidArgumentException implements Exception
+class InvalidArgumentException extends \MongoDB\Driver\Exception\InvalidArgumentException implements Exception
 {
     /**
      * Thrown when an argument or option has an invalid type.

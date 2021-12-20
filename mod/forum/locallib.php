@@ -723,8 +723,7 @@ function forum_update_calendar($forum, $cmid) {
 
     if (!empty($forum->duedate)) {
         $event->name = get_string('calendardue', 'forum', $forum->name);
-        $event->description = format_module_intro('forum', $forum, $cmid, false);
-        $event->format = FORMAT_HTML;
+        $event->description = format_module_intro('forum', $forum, $cmid);
         $event->courseid = $forum->course;
         $event->modulename = 'forum';
         $event->instance = $forum->id;

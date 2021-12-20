@@ -27,8 +27,4 @@ Feature: To be able to see and save user message preferences as admin
     And I log in as "student1"
     And I follow "Preferences" in the user menu
     And I click on "Message preferences" "link"
-<<<<<<< HEAD
     And the field "Email" matches value "0"
-=======
-    And the field "Email" matches value "0"
->>>>>>> remotes/origin/MOODLE_310_STABLE

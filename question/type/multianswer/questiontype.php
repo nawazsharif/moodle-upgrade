@@ -257,7 +257,7 @@ class qtype_multianswer extends question_type {
 
 // ANSWER_ALTERNATIVE regexes.
 define('ANSWER_ALTERNATIVE_FRACTION_REGEX',
-       '=|%(-?[0-9]+(?:[.,][0-9]*)?)%');
+       '=|%(-?[0-9]+)%');
 // For the syntax '(?<!' see http://www.perl.com/doc/manual/html/pod/perlre.html#item_C.
 define('ANSWER_ALTERNATIVE_ANSWER_REGEX',
         '.+?(?<!\\\\|&|&amp;)(?=[~#}]|$)');
@@ -444,8 +444,7 @@ function qtype_multianswer_extract_question($text) {
             if ('=' == $altregs[ANSWER_ALTERNATIVE_REGEX_FRACTION]) {
                 $wrapped->fraction["{$answerindex}"] = '1';
             } else if ($percentile = $altregs[ANSWER_ALTERNATIVE_REGEX_PERCENTILE_FRACTION]) {
-                // Accept either decimal place character.
-                $wrapped->fraction["{$answerindex}"] = .01 * str_replace(',', '.', $percentile);
+                $wrapped->fraction["{$answerindex}"] = .01 * $percentile;
                 $hasspecificfraction = true;
             } else {
                 $wrapped->fraction["{$answerindex}"] = '0';

@@ -809,8 +809,7 @@ function feedback_set_events($feedback) {
         $event->eventtype    = FEEDBACK_EVENT_TYPE_OPEN;
         $event->type         = empty($feedback->timeclose) ? CALENDAR_EVENT_TYPE_ACTION : CALENDAR_EVENT_TYPE_STANDARD;
         $event->name         = get_string('calendarstart', 'feedback', $feedback->name);
-        $event->description  = format_module_intro('feedback', $feedback, $feedback->coursemodule, false);
-        $event->format       = FORMAT_HTML;
+        $event->description  = format_module_intro('feedback', $feedback, $feedback->coursemodule);
         $event->timestart    = $feedback->timeopen;
         $event->timesort     = $feedback->timeopen;
         $event->visible      = instance_is_visible('feedback', $feedback);
@@ -845,8 +844,7 @@ function feedback_set_events($feedback) {
         $event->type         = CALENDAR_EVENT_TYPE_ACTION;
         $event->eventtype    = FEEDBACK_EVENT_TYPE_CLOSE;
         $event->name         = get_string('calendarend', 'feedback', $feedback->name);
-        $event->description  = format_module_intro('feedback', $feedback, $feedback->coursemodule, false);
-        $event->format       = FORMAT_HTML;
+        $event->description  = format_module_intro('feedback', $feedback, $feedback->coursemodule);
         $event->timestart    = $feedback->timeclose;
         $event->timesort     = $feedback->timeclose;
         $event->visible      = instance_is_visible('feedback', $feedback);
@@ -2639,7 +2637,6 @@ function feedback_send_email($cm, $feedback, $course, $user, $completed = null) 
             ];
             if ($feedback->anonymous == FEEDBACK_ANONYMOUS_NO) {
                 $eventdata = new \core\message\message();
-                $eventdata->anonymous        = false;
                 $eventdata->courseid         = $course->id;
                 $eventdata->name             = 'submission';
                 $eventdata->component        = 'mod_feedback';
@@ -2662,7 +2659,6 @@ function feedback_send_email($cm, $feedback, $course, $user, $completed = null) 
                 message_send($eventdata);
             } else {
                 $eventdata = new \core\message\message();
-                $eventdata->anonymous        = true;
                 $eventdata->courseid         = $course->id;
                 $eventdata->name             = 'submission';
                 $eventdata->component        = 'mod_feedback';
@@ -2728,7 +2724,6 @@ function feedback_send_email_anonym($cm, $feedback, $course) {
             }
 
             $eventdata = new \core\message\message();
-            $eventdata->anonymous        = true;
             $eventdata->courseid         = $course->id;
             $eventdata->name             = 'submission';
             $eventdata->component        = 'mod_feedback';

@@ -38,10 +38,12 @@ use Behat\Testwork\Hook\Scope\BeforeSuiteScope,
     Behat\Behat\Hook\Scope\BeforeStepScope,
     Behat\Behat\Hook\Scope\AfterStepScope,
     Behat\Mink\Exception\ExpectationException,
-    Behat\Mink\Exception\DriverException,
-    Facebook\WebDriver\Exception\UnexpectedAlertOpenException,
-    Facebook\WebDriver\Exception\WebDriverCurlException,
-    Facebook\WebDriver\Exception\UnknownErrorException;
+    Behat\Mink\Exception\DriverException as DriverException,
+    WebDriver\Exception\NoSuchWindow as NoSuchWindow,
+    WebDriver\Exception\UnexpectedAlertOpen as UnexpectedAlertOpen,
+    WebDriver\Exception\UnknownError as UnknownError,
+    WebDriver\Exception\CurlExec as CurlExec,
+    WebDriver\Exception\NoAlertOpenError as NoAlertOpenError;
 
 /**
  * Hooks to the behat process.
@@ -80,7 +82,7 @@ class behat_hooks extends behat_base {
      * failure, but we can store them here to fail the step in i_look_for_exceptions()
      * which result will be parsed by the framework as the last step result.
      *
-     * @var ?Exception Null or the exception last step throw in the before or after hook.
+     * @var Null or the exception last step throw in the before or after hook.
      */
     protected static $currentstepexception = null;
 
@@ -288,11 +290,7 @@ EOF;
         if ($session->isStarted()) {
             $session->restart();
         } else {
-<<<<<<< HEAD
             $session->start();
-=======
-            $this->start_session();
->>>>>>> remotes/origin/MOODLE_310_STABLE
         }
         if ($this->running_javascript() && $this->getSession()->getDriver()->getWebDriverSessionId() === 'session') {
             throw new DriverException('Unable to create a valid session');
@@ -300,18 +298,6 @@ EOF;
     }
 
     /**
-<<<<<<< HEAD
-=======
-     * Start the Session, applying any initial configuratino required.
-     */
-    protected function start_session(): void {
-        $this->getSession()->start();
-
-        $this->set_test_timeout_factor(1);
-    }
-
-    /**
->>>>>>> remotes/origin/MOODLE_310_STABLE
      * Restart the session before each non-javascript scenario.
      *
      * @BeforeScenario @~javascript
@@ -353,28 +339,17 @@ The following debugging information is available:
 
 EOF;
 
-<<<<<<< HEAD
 
         try {
             $this->restart_session();
         } catch (CurlExec | DriverException $e) {
             // The CurlExec Exception is thrown by WebDriver.
-=======
-        try {
-            $this->restart_session();
-        } catch (WebDriverCurlException | DriverException $e) {
-            // Thrown by WebDriver.
->>>>>>> remotes/origin/MOODLE_310_STABLE
             self::log_and_stop(
                 $driverexceptionmsg . '. ' .
                 $e->getMessage() . "\n\n" .
                 format_backtrace($e->getTrace(), true)
             );
-<<<<<<< HEAD
         } catch (UnknownError $e) {
-=======
-        } catch (UnknownErrorException $e) {
->>>>>>> remotes/origin/MOODLE_310_STABLE
             // Generic 'I have no idea' Selenium error. Custom exception to provide more feedback about possible solutions.
             self::log_and_stop(
                 $e->getMessage() . "\n\n" .
@@ -662,14 +637,14 @@ EOF;
         try {
             $this->wait_for_pending_js();
             self::$currentstepexception = null;
-        } catch (UnexpectedAlertOpenException $e) {
+        } catch (UnexpectedAlertOpen $e) {
             self::$currentstepexception = $e;
 
             // Accepting the alert so the framework can continue properly running
             // the following scenarios. Some browsers already closes the alert, so
             // wrapping in a try & catch.
             try {
-                $this->getSession()->getDriver()->getWebDriver()->switchTo()->alert()->accept();
+                $this->getSession()->getDriver()->getWebDriverSession()->accept_alert();
             } catch (Exception $e) {
                 // Catching the generic one as we never know how drivers reacts here.
             }
@@ -685,28 +660,7 @@ EOF;
      * @AfterScenario
      */
     public function reset_webdriver_between_scenarios(AfterScenarioScope $scope) {
-<<<<<<< HEAD
         $this->getSession()->stop();
-=======
-        try {
-            $this->getSession()->stop();
-        } catch (Exception $e) {
-            $error = <<<EOF
-
-Error while stopping WebDriver: %s (%d) '%s'
-Attempting to continue with test run. Stacktrace follows:
-
-%s
-EOF;
-            error_log(sprintf(
-                $error,
-                get_class($e),
-                $e->getCode(),
-                $e->getMessage(),
-                format_backtrace($e->getTrace(), true)
-            ));
-        }
->>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     /**

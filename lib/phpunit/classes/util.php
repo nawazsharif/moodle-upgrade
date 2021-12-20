@@ -63,7 +63,7 @@ class phpunit_util extends testing_util {
     /**
      * @var array Files to skip when dropping dataroot folder
      */
-    protected static $datarootskipondrop = array('.', '..', 'lock');
+    protected static $datarootskipondrop = array('.', '..', 'lock', 'webrunner.xml');
 
     /**
      * Load global $CFG;
@@ -203,12 +203,6 @@ class phpunit_util extends testing_util {
         $ME = null;
         $SCRIPT = null;
         $FILTERLIB_PRIVATE = null;
-<<<<<<< HEAD
-=======
-        if (!empty($SESSION->notifications)) {
-            $SESSION->notifications = [];
-        }
->>>>>>> remotes/origin/MOODLE_310_STABLE
 
         // Empty sessison and set fresh new not-logged-in user.
         \core\session\manager::init_empty_session();
@@ -489,7 +483,7 @@ class phpunit_util extends testing_util {
     }
 
     /**
-     * Builds dirroot/phpunit.xml file using defaults from /phpunit.xml.dist
+     * Builds dirroot/phpunit.xml and dataroot/phpunit/webrunner.xml files using defaults from /phpunit.xml.dist
      * @static
      * @return bool true means main config file created, false means only dataroot file created
      */
@@ -576,6 +570,14 @@ class phpunit_util extends testing_util {
                 testing_fix_file_permissions("$CFG->dirroot/phpunit.xml");
             }
         }
+
+        // relink - it seems that xml:base does not work in phpunit xml files, remove this nasty hack if you find a way to set xml base for relative refs
+        $data = str_replace('lib/phpunit/', $CFG->dirroot.DIRECTORY_SEPARATOR.'lib'.DIRECTORY_SEPARATOR.'phpunit'.DIRECTORY_SEPARATOR, $data);
+        $data = preg_replace('|<directory suffix="_test.php">([^<]+)</directory>|',
+            '<directory suffix="_test.php">'.$CFG->dirroot.(DIRECTORY_SEPARATOR === '\\' ? '\\\\' : DIRECTORY_SEPARATOR).'$1</directory>',
+            $data);
+        file_put_contents("$CFG->dataroot/phpunit/webrunner.xml", $data);
+        testing_fix_file_permissions("$CFG->dataroot/phpunit/webrunner.xml");
 
         return (bool)$result;
     }

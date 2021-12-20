@@ -73,7 +73,6 @@ function(
         HEADER_CONTAINER: '[data-region="header-container"]',
         BODY_CONTAINER: '[data-region="body-container"]',
         FOOTER_CONTAINER: '[data-region="footer-container"]',
-        CLOSE_BUTTON: '[data-action="closedrawer"]'
     };
 
     /**
@@ -84,7 +83,7 @@ function(
      * @param {string} selector The route container.
      *
      * @return {array} elements Found route container objects.
-     */
+    */
     var getParametersForRoute = function(namespace, root, selector) {
 
         var header = root.find(SELECTORS.HEADER_CONTAINER).find(selector);
@@ -294,14 +293,6 @@ function(
             setJumpFrom(args.buttonid);
             show(namespace, root);
             Router.go(namespace, Routes.VIEW_CONVERSATION, args.conversationid);
-<<<<<<< HEAD
-=======
-        });
-
-        var closebutton = root.find(SELECTORS.CLOSE_BUTTON);
-        closebutton.on(CustomEvents.events.activate, function() {
-            PubSub.publish(Events.TOGGLE_VISIBILITY);
->>>>>>> remotes/origin/MOODLE_310_STABLE
         });
 
         PubSub.subscribe(Events.CREATE_CONVERSATION_WITH_USER, function(args) {

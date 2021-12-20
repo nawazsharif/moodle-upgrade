@@ -52,11 +52,7 @@ Feature: Groups report filter is not available if no groups exist
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
     And I follow "forum1"
-<<<<<<< HEAD
     And I navigate to "Summary report" in current page administration
-=======
-    And I navigate to "Forum summary report" in current page administration
->>>>>>> remotes/origin/MOODLE_310_STABLE
     Then "Groups" "button" should not exist
     And the following should exist in the "forumreport_summary_table" table:
     # |                      | Discussions |

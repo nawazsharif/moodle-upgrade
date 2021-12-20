@@ -58,7 +58,6 @@ $outcome = new stdClass();
 $outcome->success = true;
 $outcome->response = new stdClass();
 $outcome->error = '';
-$outcome->count = 0;
 
 $searchanywhere = get_user_preferences('userselector_searchanywhere', false);
 
@@ -165,10 +164,14 @@ switch ($action) {
             foreach ($users as $user) {
                 $plugin->enrol_user($instance, $user->id, $roleid, $timestart, $timeend, null, $recovergrades);
             }
-            $outcome->count += count($users);
+            $counter = count($users);
             foreach ($cohorts as $cohort) {
                 $totalenrolledusers = $plugin->enrol_cohort($instance, $cohort->id, $roleid, $timestart, $timeend, null, $recovergrades);
-                $outcome->count += $totalenrolledusers;
+                $counter += $totalenrolledusers;
+            }
+            // Display a notification message after the bulk user enrollment.
+            if ($counter > 0) {
+                \core\notification::info(get_string('totalenrolledusers', 'enrol', $counter));
             }
         } else {
             throw new enrol_ajax_exception('enrolnotpermitted');

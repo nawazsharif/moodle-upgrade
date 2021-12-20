@@ -16,6 +16,7 @@
 /**
  * Manage the courses view for the overview block.
  *
+ * @package    block_myoverview
  * @copyright  2018 Bas Brands <bas@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,7 +33,6 @@ define(
     'core_course/events',
     'block_myoverview/selectors',
     'core/paged_content_events',
-    'core/aria',
 ],
 function(
     $,
@@ -44,8 +44,7 @@ function(
     Templates,
     CourseEvents,
     Selectors,
-    PagedContentEvents,
-    Aria
+    PagedContentEvents
 ) {
 
     var SELECTORS = {
@@ -175,14 +174,12 @@ function(
      */
     var hideFavouriteIcon = function(root, courseId) {
         var iconContainer = getFavouriteIconContainer(root, courseId);
-
         var isFavouriteIcon = iconContainer.find(SELECTORS.ICON_IS_FAVOURITE);
         isFavouriteIcon.addClass('hidden');
-        Aria.hide(isFavouriteIcon);
-
+        isFavouriteIcon.attr('aria-hidden', true);
         var notFavourteIcon = iconContainer.find(SELECTORS.ICON_NOT_FAVOURITE);
         notFavourteIcon.removeClass('hidden');
-        Aria.unhide(notFavourteIcon);
+        notFavourteIcon.attr('aria-hidden', false);
     };
 
     /**
@@ -193,14 +190,12 @@ function(
      */
     var showFavouriteIcon = function(root, courseId) {
         var iconContainer = getFavouriteIconContainer(root, courseId);
-
         var isFavouriteIcon = iconContainer.find(SELECTORS.ICON_IS_FAVOURITE);
         isFavouriteIcon.removeClass('hidden');
-        Aria.unhide(isFavouriteIcon);
-
+        isFavouriteIcon.attr('aria-hidden', false);
         var notFavourteIcon = iconContainer.find(SELECTORS.ICON_NOT_FAVOURITE);
         notFavourteIcon.addClass('hidden');
-        Aria.hide(notFavourteIcon);
+        notFavourteIcon.attr('aria-hidden', true);
     };
 
     /**
@@ -522,6 +517,7 @@ function(
      * Intialise the courses list and cards views on page load.
      *
      * @param {object} root The root element for the courses view.
+     * @param {object} content The content element for the courses view.
      */
     var initializePagedContent = function(root) {
         namespace = "block_myoverview_" + root.attr('id') + "_" + Math.random();
@@ -541,9 +537,11 @@ function(
 
         // Filter out all pagination options which are too large for the amount of courses user is enrolled in.
         var totalCourseCount = parseInt(root.find(Selectors.courseView.region).attr('data-totalcoursecount'), 10);
-        itemsPerPage = itemsPerPage.filter(function(pagingOption) {
-            return pagingOption.value < totalCourseCount || pagingOption.value === 0;
-        });
+        if (totalCourseCount) {
+            itemsPerPage = itemsPerPage.filter(function(pagingOption) {
+                return pagingOption.value < totalCourseCount;
+            });
+        }
 
         var filters = getFilterValues(root);
         var config = $.extend({}, DEFAULT_PAGED_CONTENT_CONFIG);
@@ -598,8 +596,7 @@ function(
                                 pageCourses = $.merge(loadedPages[currentPage].courses, courses.slice(0, nextPageStart));
                             }
                         } else {
-                            // When the page limit is zero, there is only one page of courses, no start for next page.
-                            nextPageStart = pageData.limit || false;
+                            nextPageStart = pageData.limit;
                             pageCourses = (pageData.limit > 0) ? courses.slice(0, pageData.limit) : courses;
                         }
 
@@ -608,8 +605,8 @@ function(
                             courses: pageCourses
                         };
 
-                        // Set up the next page (if there is more than one page).
-                        var remainingCourses = nextPageStart !== false ? courses.slice(nextPageStart, courses.length) : [];
+                        // Set up the next page
+                        var remainingCourses = nextPageStart ? courses.slice(nextPageStart, courses.length) : [];
                         if (remainingCourses.length) {
                             loadedPages[currentPage + 1] = {
                                 courses: remainingCourses
@@ -707,8 +704,8 @@ function(
     };
 
     /**
+
      * Reset the courses views to their original
-     *
      * state on first page load.courseOffset
      *
      * This is called when configuration has changed for the event lists

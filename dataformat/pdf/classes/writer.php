@@ -72,13 +72,6 @@ class writer extends \core\dataformat\base {
     public function send_http_headers() {
     }
 
-    /**
-     * Start output to file, note that the actual writing of the file is done in {@see close_output_to_file()}
-     */
-    public function start_output_to_file(): void {
-        $this->start_output();
-    }
-
     public function start_output() {
         $this->pdf->AddPage('L');
     }
@@ -90,68 +83,25 @@ class writer extends \core\dataformat\base {
         $this->colwidth = $pagewidth / count($columns);
         $this->columns = $columns;
 
-        $this->print_heading($this->pdf);
+        $this->print_heading();
     }
 
-    /**
-     * Method to define whether the dataformat supports export of HTML
-     *
-     * @return bool
-     */
-    public function supports_html(): bool {
-        return true;
-    }
-
-    /**
-     * When exporting images, we need to return their Base64 encoded content. Otherwise TCPDF will create a HTTP
-     * request for them, which will lead to the login page (i.e. not the image it expects) and throw an exception
-     *
-     * Note: ideally we would copy the file to a temp location and return it's path, but a bug in TCPDF currently
-     * prevents that
-     *
-     * @param \stored_file $file
-     * @return string|null
-     */
-    protected function export_html_image_source(\stored_file $file): ?string {
-        // Set upper dimensions for embedded images.
-        $resizedimage = $file->resize_image(400, 300);
-
-        return '@' . base64_encode($resizedimage);
-    }
-
-    /**
-     * Write a single record
-     *
-     * @param array $record
-     * @param int $rownum
-     */
     public function write_record($record, $rownum) {
         $rowheight = 0;
 
-        $record = $this->format_record($record);
+        // If $record is an object convert it to an array.
+        if (is_object($record)) {
+            $record = (array)$record;
+        }
+
         foreach ($record as $cell) {
-            // We need to calculate the row height (accounting for any content). Unfortunately TCPDF doesn't provide an easy
-            // method to do that, so we create a second PDF inside a transaction, add cell content and use the largest cell by
-            // height. Solution similar to that at https://stackoverflow.com/a/1943096.
-            $pdf2 = clone $this->pdf;
-            $pdf2->startTransaction();
-            $numpages = $pdf2->getNumPages();
-            $pdf2->AddPage('L');
-            $this->print_heading($pdf2);
-            $pdf2->writeHTMLCell($this->colwidth, 0, '', '', $cell, 1, 1, false, true, 'L');
-            $pagesadded = $pdf2->getNumPages() - $numpages;
-            $margins = $pdf2->getMargins();
-            $pageheight = $pdf2->getPageHeight() - $margins['top'] - $margins['bottom'];
-            $cellheight = ($pagesadded - 1) * $pageheight + $pdf2->getY() - $margins['top'] - $this->get_heading_height();
-            $rowheight = max($rowheight, $cellheight);
-            $pdf2->rollbackTransaction();
+            $rowheight = max($rowheight, $this->pdf->getStringHeight($this->colwidth, $cell, false, true, '', 1));
         }
 
         $margins = $this->pdf->getMargins();
-        if ($this->pdf->getNumPages() > 1 &&
-                ($this->pdf->GetY() + $rowheight + $margins['bottom'] > $this->pdf->getPageHeight())) {
+        if ($this->pdf->GetY() + $rowheight + $margins['bottom'] > $this->pdf->getPageHeight()) {
             $this->pdf->AddPage('L');
-            $this->print_heading($this->pdf);
+            $this->print_heading();
         }
 
         // Get the last key for this record.
@@ -166,7 +116,7 @@ class writer extends \core\dataformat\base {
             // Determine whether we're at the last element of the record.
             $nextposition = ($lastkey === $key) ? 1 : 0;
             // Write the element.
-            $this->pdf->writeHTMLCell($this->colwidth, $rowheight, '', '', $cell, 1, $nextposition, false, true, 'L');
+            $this->pdf->Multicell($this->colwidth, $rowheight, $cell, 1, 'L', false, $nextposition);
         }
     }
 
@@ -177,47 +127,25 @@ class writer extends \core\dataformat\base {
     }
 
     /**
-     * Write data to disk
-     *
-     * @return bool
+     * Prints the heading row.
      */
-    public function close_output_to_file(): bool {
-        $this->pdf->Output($this->filepath, 'F');
-
-        return true;
-    }
-
-    /**
-     * Prints the heading row for a given PDF.
-     *
-     * @param \pdf $pdf A pdf to print headings in
-     */
-    private function print_heading(\pdf $pdf) {
-        $fontfamily = $pdf->getFontFamily();
-        $fontstyle = $pdf->getFontStyle();
-        $pdf->SetFont($fontfamily, 'B');
+    private function print_heading() {
+        $fontfamily = $this->pdf->getFontFamily();
+        $fontstyle = $this->pdf->getFontStyle();
+        $this->pdf->SetFont($fontfamily, 'B');
+        $rowheight = 0;
+        foreach ($this->columns as $columns) {
+            $rowheight = max($rowheight, $this->pdf->getStringHeight($this->colwidth, $columns, false, true, '', 1));
+        }
 
         $total = count($this->columns);
         $counter = 1;
         foreach ($this->columns as $columns) {
             $nextposition = ($counter == $total) ? 1 : 0;
-            $pdf->Multicell($this->colwidth, $this->get_heading_height(), $columns, 1, 'C', true, $nextposition);
+            $this->pdf->Multicell($this->colwidth, $rowheight, $columns, 1, 'C', true, $nextposition);
             $counter++;
         }
 
-        $pdf->SetFont($fontfamily, $fontstyle);
-    }
-
-    /**
-     * Returns the heading height.
-     *
-     * @return int
-     */
-    private function get_heading_height() {
-        $height = 0;
-        foreach ($this->columns as $columns) {
-            $height = max($height, $this->pdf->getStringHeight($this->colwidth, $columns, false, true, '', 1));
-        }
-        return $height;
+        $this->pdf->SetFont($fontfamily, $fontstyle);
     }
 }

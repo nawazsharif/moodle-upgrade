@@ -17,19 +17,21 @@
  * Javascript controller for the "Grading" panel at the right of the page.
  *
  * @module     mod_assign/grading_panel
+ * @package    mod_assign
+ * @class      GradingPanel
  * @copyright  2016 Damyon Wiese <damyon@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.1
  */
 define(['jquery', 'core/yui', 'core/notification', 'core/templates', 'core/fragment',
         'core/ajax', 'core/str', 'mod_assign/grading_form_change_checker',
-        'mod_assign/grading_events', 'core/event', 'core/toast'],
-       function($, Y, notification, templates, fragment, ajax, str, checker, GradingEvents, Event, Toast) {
+        'mod_assign/grading_events', 'core/event'],
+       function($, Y, notification, templates, fragment, ajax, str, checker, GradingEvents, Event) {
 
     /**
      * GradingPanel class.
      *
-     * @class mod_assign/grading_panel
+     * @class GradingPanel
      * @param {String} selector The selector for the page region containing the user navigation.
      */
     var GradingPanel = function(selector) {
@@ -40,22 +42,22 @@ define(['jquery', 'core/yui', 'core/notification', 'core/templates', 'core/fragm
         this.registerEventListeners();
     };
 
-    /** @property {String} Selector for the page region containing the user navigation. */
+    /** @type {String} Selector for the page region containing the user navigation. */
     GradingPanel.prototype._regionSelector = null;
 
-    /** @property {Integer} Remember the last user id to prevent unnessecary reloads. */
+    /** @type {Integer} Remember the last user id to prevent unnessecary reloads. */
     GradingPanel.prototype._lastUserId = 0;
 
-    /** @property {Integer} Remember the last attempt number to prevent unnessecary reloads. */
+    /** @type {Integer} Remember the last attempt number to prevent unnessecary reloads. */
     GradingPanel.prototype._lastAttemptNumber = -1;
 
-    /** @property {JQuery} JQuery node for the page region containing the user navigation. */
+    /** @type {JQuery} JQuery node for the page region containing the user navigation. */
     GradingPanel.prototype._region = null;
 
-     /** @property {Integer} The id of the next user in the grading list */
+     /** @type {Integer} The id of the next user in the grading list */
     GradingPanel.prototype.nextUserId = null;
 
-     /** @property {Boolean} Next user exists in the grading list */
+     /** @type {Boolean} Next user exists in the grading list */
     GradingPanel.prototype.nextUser = false;
 
     /**
@@ -133,8 +135,8 @@ define(['jquery', 'core/yui', 'core/notification', 'core/templates', 'core/fragm
      * @method _handleFormSubmissionResponse
      * @param {Array} formdata - submitted values
      * @param {Integer} nextUserId - optional. The id of the user to load after the form is saved.
-     * @param {Boolean} nextUser - optional. If true, switch to next user in the grading list.
      * @param {Array} response List of errors.
+     * @param {Boolean} nextUser - optional. If true, switch to next user in the grading list.
      */
     GradingPanel.prototype._handleFormSubmissionResponse = function(formdata, nextUserId, nextUser, response) {
         if (typeof nextUserId === "undefined") {
@@ -146,9 +148,10 @@ define(['jquery', 'core/yui', 'core/notification', 'core/templates', 'core/fragm
             $(document).trigger('reset', [this._lastUserId, formdata]);
         } else {
             str.get_strings([
+                {key: 'changessaved', component: 'core'},
                 {key: 'gradechangessaveddetail', component: 'mod_assign'},
             ]).done(function(strs) {
-                Toast.add(strs[0]);
+                notification.alert(strs[0], strs[1]);
             }).fail(notification.exception);
             Y.use('moodle-core-formchangechecker', function() {
                 M.core_formchangechecker.reset_form_dirty_state();

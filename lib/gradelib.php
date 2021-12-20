@@ -676,18 +676,16 @@ function grade_get_grades($courseid, $itemtype, $itemmodule, $iteminstance, $use
 function grade_get_setting($courseid, $name, $default=null, $resetcache=false) {
     global $DB;
 
-    $cache = cache::make('core', 'gradesetting');
-    $gradesetting = $cache->get($courseid) ?: array();
+    static $cache = array();
 
-    if ($resetcache or empty($gradesetting)) {
-        $gradesetting = array();
-        $cache->set($courseid, $gradesetting);
+    if ($resetcache or !array_key_exists($courseid, $cache)) {
+        $cache[$courseid] = array();
 
     } else if (is_null($name)) {
         return null;
 
-    } else if (array_key_exists($name, $gradesetting)) {
-        return $gradesetting[$name];
+    } else if (array_key_exists($name, $cache[$courseid])) {
+        return $cache[$courseid][$name];
     }
 
     if (!$data = $DB->get_record('grade_settings', array('courseid'=>$courseid, 'name'=>$name))) {
@@ -700,8 +698,7 @@ function grade_get_setting($courseid, $name, $default=null, $resetcache=false) {
         $result = $default;
     }
 
-    $gradesetting[$name] = $result;
-    $cache->set($courseid, $gradesetting);
+    $cache[$courseid][$name] = $result;
     return $result;
 }
 

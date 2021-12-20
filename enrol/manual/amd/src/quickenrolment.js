@@ -20,7 +20,6 @@
  * @copyright  2016 Damyon Wiese <damyon@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-<<<<<<< HEAD
 define(['core/templates',
          'jquery',
          'core/str',
@@ -106,185 +105,108 @@ define(['core/templates',
 
                 modal.setBody(bodyPromise);
             }.bind(this));
-=======
-import * as DynamicTable from 'core_table/dynamic';
-import * as Str from 'core/str';
-import * as Toast from 'core/toast';
-import Config from 'core/config';
-import Fragment from 'core/fragment';
-import ModalEvents from 'core/modal_events';
-import ModalFactory from 'core/modal_factory';
-import Notification from 'core/notification';
-import jQuery from 'jquery';
-import Pending from 'core/pending';
-import Prefetch from 'core/prefetch';
-
-const Selectors = {
-    cohortSelector: "#id_cohortlist",
-    triggerButtons: ".enrolusersbutton.enrol_manual_plugin [type='submit']",
-    unwantedHiddenFields: "input[value='_qf__force_multiselect_submission']",
-    buttonWrapper: '[data-region="wrapper"]',
-};
-
-/**
- * Get the content of the body for the specified context.
- *
- * @param {Number} contextId
- * @returns {Promise}
- */
-const getBodyForContext = contextId => {
-    return Fragment.loadFragment('enrol_manual', 'enrol_users_form', contextId, {});
-};
-
-/**
- * Get the dynamic table for the button.
- *
- * @param {HTMLElement} element
- * @returns {HTMLElement}
- */
-const getDynamicTableForElement = element => {
-    const wrapper = element.closest(Selectors.buttonWrapper);
-
-    return DynamicTable.getTableFromId(wrapper.dataset.tableUniqueid);
-};
-
-/**
- * Register the event listeners for this contextid.
- *
- * @param {Number} contextId
- */
-const registerEventListeners = contextId => {
-    document.addEventListener('click', e => {
-        if (e.target.closest(Selectors.triggerButtons)) {
-            e.preventDefault();
-
-            showModal(getDynamicTableForElement(e.target), contextId);
->>>>>>> remotes/origin/MOODLE_310_STABLE
 
             return;
-        }
-    });
-};
+        }.bind(this))
+        .fail(Notification.exception);
+    };
 
-/**
- * Display the modal for this contextId.
- *
- * @param {HTMLElement} dynamicTable The table to beb refreshed when changes are made
- * @param {Number} contextId
- * @returns {Promise}
- */
-const showModal = (dynamicTable, contextId) => {
-    const pendingPromise = new Pending('enrol_manual/quickenrolment:showModal');
+    /**
+     * This triggers a form submission, so that any mform elements can do final tricks before the form submission is processed.
+     *
+     * @method submitForm
+     * @param {Event} e Form submission event.
+     * @private
+     */
+    QuickEnrolment.prototype.submitForm = function(e) {
+        e.preventDefault();
+        this.modal.getRoot().find('form').submit();
+    };
 
-    return ModalFactory.create({
-        type: ModalFactory.types.SAVE_CANCEL,
-        large: true,
-        title: Str.get_string('enrolusers', 'enrol_manual'),
-        body: getBodyForContext(contextId),
-        buttons: {
-            save: Str.get_string('enrolusers', 'enrol_manual'),
-        }
-    })
-    .then(modal => {
-        modal.getRoot().on(ModalEvents.save, e => {
-            // Trigger a form submission, so that any mform elements can do final tricks before the form submission
-            // is processed.
-            // The actual submit even tis captured in the next handler.
+    /**
+     * Private method
+     *
+     * @method submitForm
+     * @private
+     * @param {Event} e Form submission event.
+     */
+    QuickEnrolment.prototype.submitFormAjax = function(e) {
+        // We don't want to do a real form submission.
+        e.preventDefault();
 
-            e.preventDefault();
-            modal.getRoot().find('form').submit();
+        var form = this.modal.getRoot().find('form');
+
+        // Before send the data through AJAX, we need to parse and remove some unwanted hidden fields.
+        // This hidden fields are added automatically by mforms and when it reaches the AJAX we get an error.
+        var hidden = form.find(SELECTORS.UNWANTEDHIDDENFIELDS);
+        hidden.each(function() {
+            $(this).remove();
         });
 
-        modal.getRoot().on('submit', 'form', e => {
-            e.preventDefault();
+        var formData = form.serialize();
 
-            submitFormAjax(dynamicTable, modal);
-        });
+        this.modal.hide();
 
-        modal.getRoot().on(ModalEvents.hidden, () => {
-            modal.destroy();
-        });
-
-        modal.show();
-
-        return modal;
-    })
-    .then(modal => Promise.all([modal, modal.getBodyPromise()]))
-    .then(([modal, body]) => {
-        if (body.get(0).querySelector(Selectors.cohortSelector)) {
-            return modal.setSaveButtonText(Str.get_string('enroluserscohorts', 'enrol_manual')).then(() => modal);
-        }
-
-        return modal;
-    })
-    .then(modal => {
-        pendingPromise.resolve();
-
-        return modal;
-    })
-    .catch(Notification.exception);
-};
-
-/**
- * Submit the form via ajax.
- *
- * @param {HTMLElement} dynamicTable
- * @param {Object} modal
- */
-const submitFormAjax = (dynamicTable, modal) => {
-    // Note: We use a jQuery object here so that we can use its serialize functionality.
-    const form = modal.getRoot().find('form');
-
-    // Before send the data through AJAX, we need to parse and remove some unwanted hidden fields.
-    // This hidden fields are added automatically by mforms and when it reaches the AJAX we get an error.
-    form.get(0).querySelectorAll(Selectors.unwantedHiddenFields).forEach(hiddenField => hiddenField.remove());
-
-    modal.hide();
-    modal.destroy();
-
-    jQuery.ajax(
-        `${Config.wwwroot}/enrol/manual/ajax.php?${form.serialize()}`,
-        {
+        var settings = {
             type: 'GET',
             processData: false,
-            contentType: "application/json",
+            contentType: "application/json"
+        };
+
+        var script = Config.wwwroot + '/enrol/manual/ajax.php?' + formData;
+        $.ajax(script, settings)
+            .then(function(response) {
+
+                if (response.error) {
+                    Notification.addNotification({
+                        message: response.error,
+                        type: "error"
+                    });
+                } else {
+                    // Reload the page, don't show changed data warnings.
+                    if (typeof window.M.core_formchangechecker !== "undefined") {
+                        window.M.core_formchangechecker.reset_form_dirty_state();
+                    }
+                    window.location.reload();
+                }
+                return;
+            })
+            .fail(Notification.exception);
+    };
+
+    /**
+     * Private method
+     *
+     * @method getBody
+     * @private
+     * @return {Promise}
+     */
+    QuickEnrolment.prototype.getBody = function() {
+        return Fragment.loadFragment('enrol_manual', 'enrol_users_form', this.contextid, {}).fail(Notification.exception);
+    };
+
+    /**
+     * Private method
+     *
+     * @method getFooter
+     * @private
+     * @return {Promise}
+     */
+    QuickEnrolment.prototype.getFooter = function() {
+        return Template.render('enrol_manual/enrol_modal_footer', {});
+    };
+
+    return /** @alias module:enrol_manual/quickenrolment */ {
+        // Public variables and functions.
+        /**
+         * Every call to init creates a new instance of the class with it's own event listeners etc.
+         *
+         * @method init
+         * @public
+         * @param {object} config - config variables for the module.
+         */
+        init: function(config) {
+            (new QuickEnrolment(config));
         }
-    )
-    .then(response => {
-        if (response.error) {
-            throw new Error(response.error);
-        }
-
-        return response.count;
-    })
-    .then(count => {
-        return Promise.all([
-            Str.get_string('totalenrolledusers', 'enrol', count),
-            DynamicTable.refreshTableContent(dynamicTable),
-        ]);
-    })
-    .then(([notificationBody]) => notificationBody)
-    .then(notificationBody => Toast.add(notificationBody))
-    .catch(error => {
-        Notification.addNotification({
-            message: error.message,
-            type: 'error',
-        });
-    });
-};
-
-/**
- * Set up quick enrolment for the manual enrolment plugin.
- *
- * @param {Number} contextid The context id to setup for
- */
-export const init = ({contextid}) => {
-    registerEventListeners(contextid);
-
-    Prefetch.prefetchStrings('enrol_manual', [
-        'enrolusers',
-        'enroluserscohorts',
-    ]);
-
-    Prefetch.prefetchString('enrol', 'totalenrolledusers');
-};
+    };
+});

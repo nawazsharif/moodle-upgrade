@@ -60,15 +60,11 @@ class renderer extends \plugin_renderer_base {
     public function render_category(category $category) {
         $classes = $category->classes;
         if (empty($classes)) {
-            $return = \html_writer::start_tag('section',
-                array('class' => 'node_category card d-inline-block w-100 mb-3'));
-            $return .= \html_writer::start_tag('div', array('class' => 'card-body'));
+            $return = \html_writer::start_tag('section', array('class' => 'node_category'));
         } else {
-            $return = \html_writer::start_tag('section',
-                array('class' => 'node_category card d-inline-block w-100 mb-3' . $classes));
-            $return .= \html_writer::start_tag('div', array('class' => 'card-body'));
+            $return = \html_writer::start_tag('section', array('class' => 'node_category ' . $classes));
         }
-        $return .= \html_writer::tag('h3', $category->title, array('class' => 'lead'));
+        $return .= \html_writer::tag('h3', $category->title);
         $nodes = $category->nodes;
         if (empty($nodes)) {
             // No nodes, nothing to render.
@@ -79,7 +75,6 @@ class renderer extends \plugin_renderer_base {
             $return .= $this->render($node);
         }
         $return .= \html_writer::end_tag('ul');
-        $return .= \html_writer::end_tag('div');
         $return .= \html_writer::end_tag('section');
         return $return;
     }

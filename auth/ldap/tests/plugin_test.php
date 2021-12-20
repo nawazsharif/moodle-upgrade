@@ -543,7 +543,7 @@ class auth_ldap_plugin_testcase extends advanced_testcase {
     }
 
     protected function enable_plugin() {
-        $auths = get_enabled_auth_plugins();
+        $auths = get_enabled_auth_plugins(true);
         if (!in_array('ldap', $auths)) {
             $auths[] = 'ldap';
 

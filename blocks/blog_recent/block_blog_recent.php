@@ -114,8 +114,7 @@ class block_blog_recent extends block_base {
 
             foreach ($entries as $entryid => $entry) {
                 $viewblogurl->param('entryid', $entryid);
-                $entrylink = html_writer::link($viewblogurl, shorten_text(format_string($entry->subject, true,
-                    ['context' => $context])));
+                $entrylink = html_writer::link($viewblogurl, shorten_text($entry->subject));
                 $entrieslist[] = $entrylink;
             }
 

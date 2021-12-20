@@ -105,11 +105,7 @@ class post extends exporter {
                 'default' => null,
                 'null' => NULL_ALLOWED
             ],
-            'timecreated' => [
-                'type' => PARAM_INT,
-                'default' => null,
-                'null' => NULL_ALLOWED
-            ],
+            'timecreated' => ['type' => PARAM_INT],
             'unread' => [
                 'type' => PARAM_BOOL,
                 'optional' => true,

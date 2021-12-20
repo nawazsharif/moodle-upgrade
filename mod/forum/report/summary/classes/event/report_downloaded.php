@@ -58,16 +58,13 @@ class report_downloaded extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        $whose = $this->other['hasviewall'] ? 'the' : 'their own';
-        $description = "The user with id '{$this->userid}' downloaded {$whose} summary report for ";
-
-        if ($this->other['forumid']) {
-            $description .= "the forum with course module id '{$this->contextinstanceid}'.";
+        if ($this->other['hasviewall']) {
+            return "The user with id '{$this->userid}' downloaded the summary report for the forum with " .
+                    "course module id '{$this->contextinstanceid}'.";
         } else {
-            $description .= "the course with id '{$this->contextinstanceid}'.";
+            return "The user with id '{$this->userid}' downloaded their own summary report for the forum with " .
+                    "course module id '{$this->contextinstanceid}'.";
         }
-
-        return $description;
     }
 
     /**
@@ -75,13 +72,8 @@ class report_downloaded extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url() {
-        $params = ['courseid' => $this->courseid];
-
-        if (!empty($this->other['forumid'])) {
-            $params['forumid'] = $this->other['forumid'];
-        }
-
-        return new \moodle_url('/mod/forum/report/summary/index.php', $params);
+        return new \moodle_url('/mod/forum/report/summary/index.php',
+                ['courseid' => $this->courseid, 'forumid' => $this->other['forumid']]);
     }
 
     /**

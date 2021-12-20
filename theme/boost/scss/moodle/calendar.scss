@@ -6,18 +6,6 @@ $calendarEventCourseColor: #ffd3bd !default; // Pale red.
 $calendarEventGlobalColor: #d6f8cd !default; // Pale green.
 $calendarEventGroupColor: #fee7ae !default; // Pale yellow.
 $calendarEventUserColor: #dce7ec !default; // Pale blue.
-$calendarEventOtherColor: #ced4da !default; // Pale gray.
-
-// Border colours for the event colour indicators.
-$calendarEventCategoryBorder: 2px solid #9e619f !default; // Purple.
-$calendarEventCourseBorder: 2px solid #d34600 !default; // Red-orange.
-$calendarEventGlobalBorder: 2px solid #2b8713 !default; // Green.
-$calendarEventGroupBorder: 2px solid #9a6e02 !default; // Dark orange.
-$calendarEventUserBorder: 2px solid #4e7c91 !default; // Blue.
-$calendarEventOtherBorder: 2px solid #687889 !default; // Gray.
-
-// This will be the colour of mini-calendar links, hide/show filter icons, edit/delete icon buttons.
-$calendarEventColor: #0d5ca1 !default;
 
 // Border colours for the event colour indicators.
 $calendarEventCategoryBorder: 2px solid #9e619f !default; // Purple.
@@ -63,16 +51,6 @@ $calendarEventColor: #0d5ca1 !default;
     .commands a {
         color: $calendarEventColor;
     }
-<<<<<<< HEAD
-=======
-}
-
-.calendar_event_other {
-    background-color: $calendarEventOtherColor;
-    .commands a {
-        color: $calendarEventColor;
-    }
->>>>>>> remotes/origin/MOODLE_310_STABLE
 }
 
 // Calendar restyling.
@@ -116,7 +94,7 @@ $calendarEventColor: #0d5ca1 !default;
 
         .drop-target {
             box-sizing: border-box;
-            border: 1px dashed $primary;
+            border: 1px dashed $brand-primary;
         }
     }
 
@@ -202,14 +180,6 @@ $calendarEventColor: #0d5ca1 !default;
                         &.calendar_event_user {
                             background-color: $calendarEventUserColor;
                             border: $calendarEventUserBorder;
-<<<<<<< HEAD
-=======
-                        }
-
-                        &.calendar_event_other {
-                            background-color: $calendarEventOtherColor;
-                            border: $calendarEventOtherBorder;
->>>>>>> remotes/origin/MOODLE_310_STABLE
                         }
                     }
                 }
@@ -273,8 +243,10 @@ $calendarEventColor: #0d5ca1 !default;
             border-color: $calendarEventUserColor;
         }
 
-        .calendar_event_other {
-            border-color: $calendarEventOtherColor;
+        .calendar-controls {
+            .current {
+                @extend .h2;
+            }
         }
 
         .calendartable {
@@ -333,7 +305,7 @@ $calendarEventColor: #0d5ca1 !default;
 
         td {
             &.weekend {
-                color: $text-muted;
+                @extend .text-muted;
             }
 
             a {
@@ -385,15 +357,6 @@ $calendarEventColor: #0d5ca1 !default;
 
                 &.duration_finish {
                     background-color: $calendarEventUserColor;
-                }
-            }
-
-            &.duration_other {
-                border-top: 1px solid $calendarEventOtherColor;
-                border-bottom: 1px solid $calendarEventOtherColor;
-
-                &.duration_finish {
-                    background-color: $calendarEventOtherColor;
                 }
             }
         }

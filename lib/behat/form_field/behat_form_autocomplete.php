@@ -50,11 +50,7 @@ class behat_form_autocomplete extends behat_form_text {
 
         // Clear all current selections.
         $rootnode = $this->field->getParent()->getParent();
-<<<<<<< HEAD
         $selections = $rootnode->findAll('css', '.form-autocomplete-selection > [role=listitem]');
-=======
-        $selections = $rootnode->findAll('css', '.form-autocomplete-selection [role=option]');
->>>>>>> remotes/origin/MOODLE_310_STABLE
         foreach (array_reverse($selections) as $selection) {
             $selection->click();
             $this->wait_for_pending_js();

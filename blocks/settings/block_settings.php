@@ -90,7 +90,8 @@ class block_settings extends block_base {
     }
 
     function get_required_javascript() {
-        $adminnode = $this->page->settingsnav->find('siteadministration', navigation_node::TYPE_SITE_ADMIN);
+        global $PAGE;
+        $adminnode = $PAGE->settingsnav->find('siteadministration', navigation_node::TYPE_SITE_ADMIN);
         parent::get_required_javascript();
         $arguments = array(
             'instanceid' => $this->instance->id,

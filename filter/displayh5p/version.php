@@ -24,11 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-<<<<<<< HEAD
 $plugin->version  = 2020031700;
 $plugin->requires = 2019111200;
-=======
-$plugin->version  = 2020110900;
-$plugin->requires = 2020110300;
->>>>>>> remotes/origin/MOODLE_310_STABLE
 $plugin->component = 'filter_displayh5p';

@@ -16,12 +16,13 @@
 /**
  * Template renderer for Moodle. Load and render Moodle templates with Mustache.
  *
- * @module     theme_boost/loader
+ * @module     core/templates
+ * @package    core
+ * @class      templates
  * @copyright  2015 Damyon Wiese <damyon@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      2.9
  */
-<<<<<<< HEAD
 define(['jquery', './tether', 'core/event', 'core/custom_interaction_events'], function(jQuery, Tether, Event, customEvents) {
 
     window.jQuery = jQuery;
@@ -87,91 +88,23 @@ define(['jquery', './tether', 'core/event', 'core/custom_interaction_events'], f
         var hash = window.location.hash;
         if (hash) {
            jQuery('.nav-link[href="' + hash + '"]').tab('show');
-=======
-
-import $ from 'jquery';
-import * as Aria from './aria';
-import Bootstrap from './bootstrap/index';
-import Pending from 'core/pending';
-import Scroll from './scroll';
-import setupBootstrapPendingChecks from './pending';
-
-/**
- * Rember the last visited tabs.
- */
-const rememberTabs = () => {
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-        var hash = $(e.target).attr('href');
-        if (history.replaceState) {
-            history.replaceState(null, null, hash);
-        } else {
-            location.hash = hash;
         }
-    });
-    const hash = window.location.hash;
-    if (hash) {
-        const tab = document.querySelector('.nav-link[href="' + hash + '"]');
-        if (tab) {
-            tab.click();
->>>>>>> remotes/origin/MOODLE_310_STABLE
-        }
-    }
-};
 
-/**
- * Enable all popovers
- *
- */
-const enablePopovers = () => {
-    $('body').popover({
-        container: 'body',
-        selector: '[data-toggle="popover"]',
-        trigger: 'focus',
+        // We need to call popover automatically if nodes are added to the page later.
+        Event.getLegacyEvents().done(function(events) {
+            jQuery(document).on(events.FILTER_CONTENT_UPDATED, function() {
+                jQuery('body').popover({
+                    selector: '[data-toggle="popover"]',
+                    trigger: 'focus'
+                });
+
+            });
+        });
+
+        Aria.init();
+        M.util.js_complete('theme_boost/loader:children');
     });
 
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && e.target.closest('[data-toggle="popover"]')) {
-            $(e.target).popover('hide');
-        }
-    });
-};
 
-/**
- * Enable tooltips
- *
- */
-const enableTooltips = () => {
-    $('body').tooltip({
-        container: 'body',
-        selector: '[data-toggle="tooltip"]',
-    });
-};
-
-const pendingPromise = new Pending('theme_boost/loader:init');
-
-// Add pending promise event listeners to relevant Bootstrap custom events.
-setupBootstrapPendingChecks();
-
-// Setup Aria helpers for Bootstrap features.
-Aria.init();
-
-// Remember the last visited tabs.
-rememberTabs();
-
-// Enable all popovers.
-enablePopovers();
-
-// Enable all tooltips.
-enableTooltips();
-
-// Add scroll handling.
-(new Scroll()).init();
-
-// Disables flipping the dropdowns up and getting hidden behind the navbar.
-$.fn.dropdown.Constructor.Default.flip = false;
-
-pendingPromise.resolve();
-
-export {
-    Bootstrap,
-};
+    return {};
+});

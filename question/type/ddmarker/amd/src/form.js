@@ -16,7 +16,8 @@
 /**
  * This class provides the enhancements to the drag-drop marker editing form.
  *
- * @module     qtype_ddmarker/form
+ * @package    qtype_ddmarker
+ * @subpackage form
  * @copyright  2018 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -50,8 +51,7 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
         if (this.shape.getCoordinates() === coordinates) {
             return;
         }
-        // We don't need to scale the shape for editing form.
-        if (!this.shape.parse(coordinates, 1)) {
+        if (!this.shape.parse(coordinates)) {
             // Invalid coordinates. Don't update the preview.
             return;
         }
@@ -70,8 +70,6 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
             // Simple update.
             this.updateSvgEl();
         }
-        // Update the rounded coordinates if needed.
-        this.setCoordinatesInForm();
     };
 
     /**
@@ -354,6 +352,11 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
     var dragDropForm = {
 
         /**
+         * @var {object} with properties width and height.
+         */
+        maxSizes: null, // Object containing maximum sizes for the background image.
+
+        /**
          * @var {object} for interacting with the file pickers.
          */
         fp: null, // Object containing functions associated with the file picker.
@@ -370,8 +373,11 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
 
         /**
          * Initialise the form.
+         *
+         * @param {Object} maxBgimageSize object with two properties width and height.
          */
-        init: function() {
+        init: function(maxBgimageSize) {
+            dragDropForm.maxSizes = maxBgimageSize;
             dragDropForm.fp = dragDropForm.filePickers();
             dragDropForm.noDropZones = dragDropForm.form.getFormValue('nodropzone', []);
             dragDropForm.setupPreviewArea();
@@ -553,7 +559,7 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
             // From now on, when a new file gets loaded into the filepicker, update the preview.
             // This is not in the setupEventHandlers section as it needs to be delayed until
             // after filepicker's javascript has finished.
-            $('form.mform[data-qtype="ddmarker"]').on('change', '#id_bgimage', dragDropForm.loadPreviewImage);
+            $('form.mform').on('change', '#id_bgimage', dragDropForm.loadPreviewImage);
 
             dragDropForm.loadPreviewImage();
         },
@@ -572,10 +578,24 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
          */
         afterPreviewImageLoaded: function() {
             var bgImg = $('fieldset#id_previewareaheader .dropbackground');
+            dragDropForm.constrainImageSize();
             // Place the dropzone area over the background image (adding one to account for the border).
             $('#ddm-dropzone').css('position', 'relative').css('top', (bgImg.height() + 1) * -1);
             $('#ddm-droparea').css('height', bgImg.height() + 20);
             dragDropForm.updateSvgDisplay();
+        },
+
+        /**
+         * Limits the background image display size.
+         */
+        constrainImageSize: function() {
+            var bgImg = $('fieldset#id_previewareaheader .dropbackground');
+            var reduceby = Math.max(bgImg.width() / dragDropForm.maxSizes.width,
+                bgImg.height() / dragDropForm.maxSizes.height);
+            if (reduceby > 1) {
+                bgImg.css('width', Math.floor(bgImg.width() / reduceby));
+            }
+            bgImg.addClass('constrained');
         },
 
         /**
@@ -644,7 +664,7 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
             },
 
             getEl: function(name, indexes) {
-                var form = $('form.mform[data-qtype="ddmarker"]')[0];
+                var form = $('form.mform')[0];
                 return form.elements[this.toNameWithIndex(name, indexes)];
             },
 

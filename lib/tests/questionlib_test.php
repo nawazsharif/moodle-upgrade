@@ -49,8 +49,20 @@ class core_questionlib_testcase extends advanced_testcase {
      *
      * This is executed before running any test in this file.
      */
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
+    }
+
+    /**
+     * Return true and false to test functions with feedback on and off.
+     *
+     * @return array Test data
+     */
+    public function provider_feedback() {
+        return array(
+            'Feedback test' => array(true),
+            'No feedback test' => array(false)
+        );
     }
 
     /**
@@ -211,7 +223,7 @@ class core_questionlib_testcase extends advanced_testcase {
             'contextid' => $questioncat2->contextid)));
 
         // Now we want to test deleting the course category and moving the questions to another category.
-        question_delete_course_category($coursecat1, $coursecat2);
+        question_delete_course_category($coursecat1, $coursecat2, false);
 
         // Test that all tag_instances belong to one context.
         $this->assertEquals(8, $DB->count_records('tag_instance', array('component' => 'core_question',
@@ -337,8 +349,11 @@ class core_questionlib_testcase extends advanced_testcase {
 
     /**
      * This function tests the question_delete_activity function.
+     *
+     * @param bool $feedback Whether to return feedback
+     * @dataProvider provider_feedback
      */
-    public function test_question_delete_activity() {
+    public function test_question_delete_activity($feedback) {
         global $DB;
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -346,9 +361,11 @@ class core_questionlib_testcase extends advanced_testcase {
         list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions();
 
         $cm = get_coursemodule_from_instance('quiz', $quiz->id);
-
-        // Test the deletion.
-        question_delete_activity($cm);
+        // Test that the feedback works.
+        if ($feedback) {
+            $this->expectOutputRegex('|'.get_string('unusedcategorydeleted', 'question').'|');
+        }
+        question_delete_activity($cm, $feedback);
 
         // Verify category deleted.
         $criteria = array('id' => $qcat->id);
@@ -379,20 +396,31 @@ class core_questionlib_testcase extends advanced_testcase {
         // Verify questions deleted or moved.
         $criteria = array('category' => $qcat->id);
         $this->assertEquals(0, $DB->count_records('question', $criteria));
+
+        // Test that the feedback works.
+        $expected[] = array('top', get_string('unusedcategorydeleted', 'question'));
+        $expected[] = array($qcat->name, get_string('unusedcategorydeleted', 'question'));
+        $this->assertEquals($expected, $result);
     }
 
     /**
      * This function tests the question_delete_course function.
+     *
+     * @param bool $feedback Whether to return feedback
+     * @dataProvider provider_feedback
      */
-    public function test_question_delete_course() {
+    public function test_question_delete_course($feedback) {
         global $DB;
         $this->resetAfterTest(true);
         $this->setAdminUser();
 
         list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions('course');
 
-        // Test the deletion.
-        question_delete_course($course);
+        // Test that the feedback works.
+        if ($feedback) {
+            $this->expectOutputRegex('|'.get_string('unusedcategorydeleted', 'question').'|');
+        }
+        question_delete_course($course, $feedback);
 
         // Verify category deleted.
         $criteria = array('id' => $qcat->id);
@@ -405,8 +433,11 @@ class core_questionlib_testcase extends advanced_testcase {
 
     /**
      * This function tests the question_delete_course_category function.
+     *
+     * @param bool $feedback Whether to return feedback
+     * @dataProvider provider_feedback
      */
-    public function test_question_delete_course_category() {
+    public function test_question_delete_course_category($feedback) {
         global $DB;
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -414,7 +445,10 @@ class core_questionlib_testcase extends advanced_testcase {
         list($category, $course, $quiz, $qcat, $questions) = $this->setup_quiz_and_questions('category');
 
         // Test that the feedback works.
-        question_delete_course_category($category, null);
+        if ($feedback) {
+            $this->expectOutputRegex('|'.get_string('unusedcategorydeleted', 'question').'|');
+        }
+        question_delete_course_category($category, 0, $feedback);
 
         // Verify category deleted.
         $criteria = array('id' => $qcat->id);
@@ -427,8 +461,11 @@ class core_questionlib_testcase extends advanced_testcase {
 
     /**
      * This function tests the question_delete_course_category function when it is supposed to move question categories.
+     *
+     * @param bool $feedback Whether to return feedback
+     * @dataProvider provider_feedback
      */
-    public function test_question_delete_course_category_move_qcats() {
+    public function test_question_delete_course_category_move_qcats($feedback) {
         global $DB;
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -439,19 +476,26 @@ class core_questionlib_testcase extends advanced_testcase {
         $questionsinqcat1 = count($questions1);
         $questionsinqcat2 = count($questions2);
 
-        // Test the delete.
-        question_delete_course_category($category1, $category2);
+        // Test that the feedback works.
+        if ($feedback) {
+            $a = new stdClass();
+            $a->oldplace = context::instance_by_id($qcat1->contextid)->get_context_name();
+            $a->newplace = context::instance_by_id($qcat2->contextid)->get_context_name();
+            $this->expectOutputRegex('|'.get_string('movedquestionsandcategories', 'question', $a).'|');
+        }
+        question_delete_course_category($category1, $category2, $feedback);
 
         // Verify category not deleted.
         $criteria = array('id' => $qcat1->id);
         $this->assertEquals(1, $DB->count_records('question_categories', $criteria));
 
         // Verify questions are moved.
+        $criteria = array('category' => $qcat1->id);
         $params = array($qcat2->contextid);
         $actualquestionscount = $DB->count_records_sql("SELECT COUNT(*)
                                                           FROM {question} q
                                                           JOIN {question_categories} qc ON q.category = qc.id
-                                                         WHERE qc.contextid = ?", $params);
+                                                         WHERE qc.contextid = ?", $params, $criteria);
         $this->assertEquals($questionsinqcat1 + $questionsinqcat2, $actualquestionscount);
 
         // Verify there is just a single top-level category.
@@ -2096,57 +2140,5 @@ class core_questionlib_testcase extends advanced_testcase {
         $this->assertEquals(new moodle_url('/question/exportone.php',
                 ['id' => $systemq->id, 'courseid' => SITEID, 'sesskey' => sesskey()]),
                 question_get_export_single_question_url(question_bank::load_question($systemq->id)));
-    }
-
-    /**
-     * Get test cases for test_core_question_find_next_unused_idnumber.
-     *
-     * @return array test cases.
-     */
-    public function find_next_unused_idnumber_cases(): array {
-        return [
-            ['id', null],
-            ['id1a', null],
-            ['id001', 'id002'],
-            ['id9', 'id10'],
-            ['id009', 'id010'],
-            ['id999', 'id1000'],
-            ['0', '1'],
-            ['-1', '-2'],
-            ['01', '02'],
-            ['09', '10'],
-            ['1.0E+29', '1.0E+30'], // Idnumbers are strings, not floats.
-            ['1.0E-29', '1.0E-30'], // By the way, this is not a sensible idnumber!
-            ['10.1', '10.2'],
-            ['10.9', '10.10'],
-
-        ];
-    }
-
-    /**
-     * Test core_question_find_next_unused_idnumber in the case when there are no other questions.
-     *
-     * @dataProvider find_next_unused_idnumber_cases
-     * @param string $oldidnumber value to pass to core_question_find_next_unused_idnumber.
-     * @param string|null $expectednewidnumber expected result.
-     */
-    public function test_core_question_find_next_unused_idnumber(string $oldidnumber, ?string $expectednewidnumber) {
-        $this->assertSame($expectednewidnumber, core_question_find_next_unused_idnumber($oldidnumber, 0));
-    }
-
-    public function test_core_question_find_next_unused_idnumber_skips_used() {
-        $this->resetAfterTest();
-
-        /** @var core_question_generator $generator */
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $category = $generator->create_question_category();
-        $othercategory = $generator->create_question_category();
-        $generator->create_question('truefalse', null, ['category' => $category->id, 'idnumber' => 'id9']);
-        $generator->create_question('truefalse', null, ['category' => $category->id, 'idnumber' => 'id10']);
-        // Next one to make sure only idnumbers from the right category are ruled out.
-        $generator->create_question('truefalse', null, ['category' => $othercategory->id, 'idnumber' => 'id11']);
-
-        $this->assertSame('id11', core_question_find_next_unused_idnumber('id9', $category->id));
-        $this->assertSame('id11', core_question_find_next_unused_idnumber('id8', $category->id));
     }
 }

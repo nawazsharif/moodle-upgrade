@@ -17,15 +17,11 @@
 
 namespace MongoDB\Operation;
 
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
+use MongoDB\UpdateResult;
 use MongoDB\Driver\Server;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
-use MongoDB\UpdateResult;
-use function is_array;
-use function is_object;
-use function MongoDB\is_first_key_operator;
-use function MongoDB\is_pipeline;
 
 /**
  * Operation for replacing a single document with the update command.
@@ -36,7 +32,6 @@ use function MongoDB\is_pipeline;
  */
 class ReplaceOne implements Executable
 {
-    /** @var Update */
     private $update;
 
     /**
@@ -73,16 +68,12 @@ class ReplaceOne implements Executable
      */
     public function __construct($databaseName, $collectionName, $filter, $replacement, array $options = [])
     {
-        if (! is_array($replacement) && ! is_object($replacement)) {
+        if ( ! is_array($replacement) && ! is_object($replacement)) {
             throw InvalidArgumentException::invalidType('$replacement', $replacement, 'array or object');
         }
 
-        if (is_first_key_operator($replacement)) {
+        if (\MongoDB\is_first_key_operator($replacement)) {
             throw new InvalidArgumentException('First key in $replacement argument is an update operator');
-        }
-
-        if (is_pipeline($replacement)) {
-            throw new InvalidArgumentException('$replacement argument is a pipeline');
         }
 
         $this->update = new Update(

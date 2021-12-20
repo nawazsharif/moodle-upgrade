@@ -448,10 +448,6 @@ class core_calendar_external extends external_api {
         $context = \context_user::instance($user->id);
         self::validate_context($context);
 
-        if ($params['userid'] && $USER->id !== $params['userid'] && !has_capability('moodle/calendar:manageentries', $context)) {
-            throw new \required_capability_exception($context, 'moodle/calendar:manageentries', 'nopermission', '');
-        }
-
         if (empty($params['aftereventid'])) {
             $params['aftereventid'] = null;
         }
@@ -802,20 +798,19 @@ class core_calendar_external extends external_api {
         self::validate_context($context);
         $warnings = array();
 
-        $eventvault = event_container::get_event_vault();
-        if ($event = $eventvault->get_event_by_id($eventid)) {
-            $mapper = event_container::get_event_mapper();
-            if (!calendar_view_event_allowed($mapper->from_event_to_legacy_event($event))) {
-                $event = null;
-            }
-        }
-
-        if (!$event) {
+        $legacyevent = calendar_event::load($eventid);
+        // Must check we can see this event.
+        if (!calendar_view_event_allowed($legacyevent)) {
             // We can't return a warning in this case because the event is not optional.
             // We don't know the context for the event and it's not worth loading it.
             $syscontext = context_system::instance();
             throw new \required_capability_exception($syscontext, 'moodle/course:view', 'nopermission', '');
         }
+
+        $legacyevent->count_repeats();
+
+        $eventmapper = event_container::get_event_mapper();
+        $event = $eventmapper->from_legacy_event_to_event($legacyevent);
 
         $cache = new events_related_objects_cache([$event]);
         $relatedobjects = [
