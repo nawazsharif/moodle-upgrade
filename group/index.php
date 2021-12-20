@@ -80,7 +80,14 @@ switch ($action) {
 
     case 'ajax_getmembersingroup':
         $roles = array();
+<<<<<<< HEAD
         if ($groupmemberroles = groups_get_members_by_role($groupids[0], $courseid, 'u.id, ' . get_all_user_name_fields(true, 'u'))) {
+=======
+
+        $extrafields = get_extra_user_fields($context);
+        if ($groupmemberroles = groups_get_members_by_role($groupids[0], $courseid,
+                'u.id, ' . user_picture::fields('u', $extrafields))) {
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 
             $viewfullnames = has_capability('moodle/site:viewfullnames', $context);
 
@@ -92,6 +99,18 @@ switch ($action) {
                     $shortmember = new stdClass();
                     $shortmember->id = $member->id;
                     $shortmember->name = fullname($member, $viewfullnames);
+<<<<<<< HEAD
+=======
+                    if ($extrafields) {
+                        $extrafieldsdisplay = [];
+                        foreach ($extrafields as $field) {
+                            // No escaping here, handled client side in response to AJAX request.
+                            $extrafieldsdisplay[] = $member->{$field};
+                        }
+                        $shortmember->name .= ' (' . implode(', ', $extrafieldsdisplay) . ')';
+                    }
+
+>>>>>>> remotes/origin/MOODLE_310_STABLE
                     $shortroledata->users[] = $shortmember;
                 }
                 $roles[] = $shortroledata;
@@ -183,7 +202,7 @@ if ($groups) {
         $groupoptions[] = (object) [
             'value' => $group->id,
             'selected' => $selected,
-            'text' => $groupname
+            'text' => s($groupname)
         ];
     }
 }
@@ -191,18 +210,39 @@ if ($groups) {
 // Get list of group members to render if there is a single selected group.
 $members = array();
 if ($singlegroup) {
+<<<<<<< HEAD
     $usernamefields = get_all_user_name_fields(true, 'u');
     if ($groupmemberroles = groups_get_members_by_role(reset($groupids), $courseid, 'u.id, ' . $usernamefields)) {
+=======
+    $extrafields = get_extra_user_fields($context);
+    if ($groupmemberroles = groups_get_members_by_role(reset($groupids), $courseid,
+            'u.id, ' . user_picture::fields('u', $extrafields))) {
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 
         $viewfullnames = has_capability('moodle/site:viewfullnames', $context);
 
         foreach ($groupmemberroles as $roleid => $roledata) {
             $users = array();
             foreach ($roledata->users as $member) {
+<<<<<<< HEAD
                 $users[] = (object)[
                     'value' => $member->id,
                     'text' => fullname($member, $viewfullnames)
                 ];
+=======
+                $shortmember = new stdClass();
+                $shortmember->value = $member->id;
+                $shortmember->text = fullname($member, $viewfullnames);
+                if ($extrafields) {
+                    $extrafieldsdisplay = [];
+                    foreach ($extrafields as $field) {
+                        $extrafieldsdisplay[] = s($member->{$field});
+                    }
+                    $shortmember->text .= ' (' . implode(', ', $extrafieldsdisplay) . ')';
+                }
+
+                $users[] = $shortmember;
+>>>>>>> remotes/origin/MOODLE_310_STABLE
             }
             $members[] = (object)[
                 'role' => s($roledata->name),

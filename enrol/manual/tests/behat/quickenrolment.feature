@@ -170,15 +170,21 @@ Feature: Teacher can search and enrol users one by one into the course
     When I log in as "admin"
     Then the following "users" exist:
       | username    | firstname | lastname | email                   | phone1     | phone2     | department | institution | city    | country  |
-      | student100  | Student   | 100      | student100@example.com  | 1234567892 | 1234567893 | ABC1       | ABC2        | CITY1   | UK       |
+      | student100  | Student   | 100      | student100@example.com  | 1234567892 | 1234567893 | ABC1       | ABC2        | CITY1   | GB       |
     And the following config values are set as admin:
       | showuseridentity | idnumber,email,city,country,phone1,phone2,department,institution |
     When I am on "Course 001" course homepage
     Then I navigate to course participants
     And I press "Enrol users"
+<<<<<<< HEAD
     When I click on "Select users" "field"
     And I type "student100@example.com"
     Then I should see "student100@example.com, CITY1, UK, 1234567892, 1234567893, ABC1, ABC2"
+=======
+    And I click on "Select users" "field"
+    And I type "student100@example.com"
+    Then I should see "student100@example.com, CITY1, GB, 1234567892, 1234567893, ABC1, ABC2"
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     # Remove identity field in setting User policies
     And the following config values are set as admin:
       | showuseridentity | idnumber,email,phone1,phone2,department,institution |

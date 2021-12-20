@@ -872,6 +872,34 @@ function require_capability($capability, context $context, $userid = null, $doan
 }
 
 /**
+ * A convenience function that tests has_capability for a list of capabilities, and displays an error if
+ * the user does not have that capability.
+ *
+ * This is just a utility method that calls has_capability in a loop. Try to put
+ * the capabilities that fewest users are likely to have first in the list for best
+ * performance.
+ *
+ * @category access
+ * @see has_capability()
+ *
+ * @param array $capabilities an array of capability names.
+ * @param context $context the context to check the capability in. You normally get this with context_xxxx::instance().
+ * @param int $userid A user id. By default (null) checks the permissions of the current user.
+ * @param bool $doanything If false, ignore effect of admin role assignment
+ * @param string $errormessage The error string to to user. Defaults to 'nopermissions'.
+ * @param string $stringfile The language file to load the error string from. Defaults to 'error'.
+ * @return void terminates with an error if the user does not have the given capability.
+ */
+function require_all_capabilities(array $capabilities, context $context, $userid = null, $doanything = true,
+                                  $errormessage = 'nopermissions', $stringfile = ''): void {
+    foreach ($capabilities as $capability) {
+        if (!has_capability($capability, $context, $userid, $doanything)) {
+            throw new required_capability_exception($context, $capability, $errormessage, $stringfile);
+        }
+    }
+}
+
+/**
  * Return a nested array showing all role assignments for the user.
  * [ra] => [contextpath][roleid] = roleid
  *
@@ -2570,43 +2598,49 @@ function get_capability_string($capabilityname) {
  */
 function get_component_string($component, $contextlevel) {
 
-    if ($component === 'moodle' or $component === 'core') {
-        switch ($contextlevel) {
-            // TODO MDL-46123: this should probably use context level names instead
-            case CONTEXT_SYSTEM:    return get_string('coresystem');
-            case CONTEXT_USER:      return get_string('users');
-            case CONTEXT_COURSECAT: return get_string('categories');
-            case CONTEXT_COURSE:    return get_string('course');
-            case CONTEXT_MODULE:    return get_string('activities');
-            case CONTEXT_BLOCK:     return get_string('block');
-            default:                print_error('unknowncontext');
-        }
+    if ($component === 'moodle' || $component === 'core') {
+        return context_helper::get_level_name($contextlevel);
     }
 
     list($type, $name) = core_component::normalize_component($component);
     $dir = core_component::get_plugin_directory($type, $name);
     if (!file_exists($dir)) {
         // plugin not installed, bad luck, there is no way to find the name
-        return $component.' ???';
+        return $component . ' ???';
     }
 
+    // Some plugin types need an extra prefix to make the name easy to understand.
     switch ($type) {
-        // TODO MDL-46123: this is really hacky and should be improved.
-        case 'quiz':         return get_string($name.':componentname', $component);// insane hack!!!
-        case 'repository':   return get_string('repository', 'repository').': '.get_string('pluginname', $component);
-        case 'gradeimport':  return get_string('gradeimport', 'grades').': '.get_string('pluginname', $component);
-        case 'gradeexport':  return get_string('gradeexport', 'grades').': '.get_string('pluginname', $component);
-        case 'gradereport':  return get_string('gradereport', 'grades').': '.get_string('pluginname', $component);
-        case 'webservice':   return get_string('webservice', 'webservice').': '.get_string('pluginname', $component);
-        case 'block':        return get_string('block').': '.get_string('pluginname', basename($component));
+        case 'quiz':
+            $prefix = get_string('quizreport', 'quiz') . ': ';
+            break;
+        case 'repository':
+            $prefix = get_string('repository', 'repository') . ': ';
+            break;
+        case 'gradeimport':
+            $prefix = get_string('gradeimport', 'grades') . ': ';
+            break;
+        case 'gradeexport':
+            $prefix = get_string('gradeexport', 'grades') . ': ';
+            break;
+        case 'gradereport':
+            $prefix = get_string('gradereport', 'grades') . ': ';
+            break;
+        case 'webservice':
+            $prefix = get_string('webservice', 'webservice') . ': ';
+            break;
+        case 'block':
+            $prefix = get_string('block') . ': ';
+            break;
         case 'mod':
-            if (get_string_manager()->string_exists('pluginname', $component)) {
-                return get_string('activity').': '.get_string('pluginname', $component);
-            } else {
-                return get_string('activity').': '.get_string('modulename', $component);
-            }
-        default: return get_string('pluginname', $component);
+            $prefix = get_string('activity') . ': ';
+            break;
+
+        // Default case, just use the plugin name.
+        default:
+            $prefix = '';
     }
+    return $prefix . get_string('pluginname', $component);
 }
 
 /**
@@ -2744,7 +2778,7 @@ function get_user_roles_in_course($userid, $courseid) {
                 $rolenames[] = '<a href="' . $url . '">' . $viewableroles[$roleid] . '</a>';
             }
         }
-        $rolestring = implode(',', $rolenames);
+        $rolestring = implode(', ', $rolenames);
     }
 
     return $rolestring;
@@ -3139,9 +3173,11 @@ function get_assignable_roles(context $context, $rolenamedisplay = ROLENAME_ALIA
  * test the moodle/role:switchroles to see if the user is allowed to switch in the first place.
  *
  * @param context $context a context.
+ * @param int $rolenamedisplay the type of role name to display. One of the
+ *      ROLENAME_X constants. Default ROLENAME_ALIAS.
  * @return array an array $roleid => $rolename.
  */
-function get_switchable_roles(context $context) {
+function get_switchable_roles(context $context, $rolenamedisplay = ROLENAME_ALIAS) {
     global $USER, $DB;
 
     // You can't switch roles without this capability.
@@ -3184,7 +3220,7 @@ function get_switchable_roles(context $context) {
       ORDER BY r.sortorder";
     $roles = $DB->get_records_sql($query, $params);
 
-    return role_fix_names($roles, $context, ROLENAME_ALIAS, true);
+    return role_fix_names($roles, $context, $rolenamedisplay, true);
 }
 
 /**
@@ -3192,9 +3228,11 @@ function get_switchable_roles(context $context) {
  *
  * @param context $context a context.
  * @param int $userid id of user.
+ * @param int $rolenamedisplay the type of role name to display. One of the
+ *      ROLENAME_X constants. Default ROLENAME_ALIAS.
  * @return array an array $roleid => $rolename.
  */
-function get_viewable_roles(context $context, $userid = null) {
+function get_viewable_roles(context $context, $userid = null, $rolenamedisplay = ROLENAME_ALIAS) {
     global $USER, $DB;
 
     if ($userid == null) {
@@ -3236,7 +3274,7 @@ function get_viewable_roles(context $context, $userid = null) {
       ORDER BY r.sortorder";
     $roles = $DB->get_records_sql($query, $params);
 
-    return role_fix_names($roles, $context, ROLENAME_ALIAS, true);
+    return role_fix_names($roles, $context, $rolenamedisplay, true);
 }
 
 /**
@@ -5487,9 +5525,11 @@ abstract class context extends stdClass implements IteratorAggregate {
      *      type of context, e.g. User, Course, Forum, etc.
      * @param boolean $short whether to use the short name of the thing. Only applies
      *      to course contexts
+     * @param boolean $escape Whether the returned name of the thing is to be
+     *      HTML escaped or not.
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         // must be implemented in all context levels
         throw new coding_exception('can not get name of abstract context');
     }
@@ -6191,9 +6231,10 @@ class context_system extends context {
      *
      * @param boolean $withprefix does not apply to system context
      * @param boolean $short does not apply to system context
+     * @param boolean $escape does not apply to system context
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         return self::get_level_name();
     }
 
@@ -6450,9 +6491,10 @@ class context_user extends context {
      *
      * @param boolean $withprefix whether to prefix the name of the context with User
      * @param boolean $short does not apply to user context
+     * @param boolean $escape does not apply to user context
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         global $DB;
 
         $name = '';
@@ -6637,9 +6679,10 @@ class context_coursecat extends context {
      *
      * @param boolean $withprefix whether to prefix the name of the context with Category
      * @param boolean $short does not apply to course categories
+     * @param boolean $escape Whether the returned name of the context is to be HTML escaped or not.
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         global $DB;
 
         $name = '';
@@ -6647,7 +6690,11 @@ class context_coursecat extends context {
             if ($withprefix){
                 $name = get_string('category').': ';
             }
-            $name .= format_string($category->name, true, array('context' => $this));
+            if (!$escape) {
+                $name .= format_string($category->name, true, array('context' => $this, 'escape' => false));
+            } else {
+                $name .= format_string($category->name, true, array('context' => $this));
+            }
         }
         return $name;
     }
@@ -6869,9 +6916,10 @@ class context_course extends context {
      *
      * @param boolean $withprefix whether to prefix the name of the context with Course
      * @param boolean $short whether to use the short name of the thing.
+     * @param bool $escape Whether the returned category name is to be HTML escaped or not.
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         global $DB;
 
         $name = '';
@@ -6883,9 +6931,18 @@ class context_course extends context {
                     $name = get_string('course').': ';
                 }
                 if ($short){
-                    $name .= format_string($course->shortname, true, array('context' => $this));
+                    if (!$escape) {
+                        $name .= format_string($course->shortname, true, array('context' => $this, 'escape' => false));
+                    } else {
+                        $name .= format_string($course->shortname, true, array('context' => $this));
+                    }
                 } else {
-                    $name .= format_string(get_course_display_name_for_list($course));
+                    if (!$escape) {
+                        $name .= format_string(get_course_display_name_for_list($course), true, array('context' => $this,
+                            'escape' => false));
+                    } else {
+                        $name .= format_string(get_course_display_name_for_list($course), true, array('context' => $this));
+                    }
                }
             }
         }
@@ -7092,9 +7149,10 @@ class context_module extends context {
      * @param boolean $withprefix whether to prefix the name of the context with the
      *      module name, e.g. Forum, Glossary, etc.
      * @param boolean $short does not apply to module context
+     * @param boolean $escape Whether the returned name of the context is to be HTML escaped or not.
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         global $DB;
 
         $name = '';
@@ -7106,7 +7164,11 @@ class context_module extends context {
                     if ($withprefix){
                         $name = get_string('modulename', $cm->modname).': ';
                     }
-                    $name .= format_string($mod->name, true, array('context' => $this));
+                    if (!$escape) {
+                        $name .= format_string($mod->name, true, array('context' => $this, 'escape' => false));
+                    } else {
+                        $name .= format_string($mod->name, true, array('context' => $this));
+                    }
                 }
             }
         return $name;
@@ -7367,9 +7429,10 @@ class context_block extends context {
      *
      * @param boolean $withprefix whether to prefix the name of the context with Block
      * @param boolean $short does not apply to block context
+     * @param boolean $escape does not apply to block context
      * @return string the human readable context name.
      */
-    public function get_context_name($withprefix = true, $short = false) {
+    public function get_context_name($withprefix = true, $short = false, $escape = true) {
         global $DB, $CFG;
 
         $name = '';

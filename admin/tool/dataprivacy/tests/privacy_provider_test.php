@@ -142,7 +142,11 @@ class tool_dataprivacy_privacy_provider_testcase extends provider_testcase {
         $this->assertEquals($strs->statusrejected, $data[1]->status);
         $this->assertEquals($strs->creationmanual, $data[1]->creationmethod);
         $this->assertEmpty($data[1]->comments);
+<<<<<<< HEAD
         $this->assertContains('Nope', $data[1]->dpocomment);
+=======
+        $this->assertStringContainsString('Nope', $data[1]->dpocomment);
+>>>>>>> remotes/origin/MOODLE_310_STABLE
         $this->assertNotEmpty($data[1]->timecreated);
     }
 
@@ -184,4 +188,8 @@ class tool_dataprivacy_privacy_provider_testcase extends provider_testcase {
 
         $this->assertEquals(6, $preferences[helper::PREF_REQUEST_PERPAGE]->value);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> remotes/origin/MOODLE_310_STABLE

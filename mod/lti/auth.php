@@ -24,6 +24,19 @@
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/mod/lti/locallib.php');
+global $_POST, $_SERVER;
+
+if (!isloggedin() && empty($_POST['repost'])) {
+    header_remove("Set-Cookie");
+    $PAGE->set_pagelayout('popup');
+    $PAGE->set_context(context_system::instance());
+    $output = $PAGE->get_renderer('mod_lti');
+    $page = new \mod_lti\output\repost_crosssite_page($_SERVER['REQUEST_URI'], $_POST);
+    echo $output->header();
+    echo $output->render($page);
+    echo $output->footer();
+    return;
+}
 
 $scope = optional_param('scope', '', PARAM_TEXT);
 $responsetype = optional_param('response_type', '', PARAM_TEXT);
@@ -122,7 +135,7 @@ if ($ok) {
         $title = base64_decode($titleb64);
         $text = base64_decode($textb64);
         $request = lti_build_content_item_selection_request($typeid, $course, $returnurl, $title, $text,
-                                                            [], [], false, false, false, false, false, $nonce);
+                                                            [], [], false, true, false, false, false, $nonce);
         $endpoint = $request->url;
         $params = $request->params;
     }

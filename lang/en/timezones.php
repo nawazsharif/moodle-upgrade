@@ -427,6 +427,10 @@ $string['pacific/gambier'] = 'Pacific/Gambier';
 $string['pacific/guadalcanal'] = 'Pacific/Guadalcanal';
 $string['pacific/guam'] = 'Pacific/Guam';
 $string['pacific/honolulu'] = 'Pacific/Honolulu';
+<<<<<<< HEAD
+=======
+$string['pacific/kanton'] = 'Pacific/Kanton';
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 $string['pacific/kiritimati'] = 'Pacific/Kiritimati';
 $string['pacific/kosrae'] = 'Pacific/Kosrae';
 $string['pacific/kwajalein'] = 'Pacific/Kwajalein';

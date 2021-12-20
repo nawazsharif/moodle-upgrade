@@ -65,6 +65,11 @@ Feature: Using the AJAX grading feature of Grader report to update grades and fe
     And I click on student "Student 3" for grade item "Item SU"
     And I set the field "ajaxgrade" to "Very good"
     And I press the shift tab key
+<<<<<<< HEAD
+=======
+    And I press the tab key
+    And I press the shift tab key
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     And I click on student "Student 3" for grade item "Item VU"
     And I set the field "ajaxgrade" to "50"
     And I press the enter key

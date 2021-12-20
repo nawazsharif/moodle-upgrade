@@ -22,7 +22,11 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+<<<<<<< HEAD
 use core_h5p\autoloader;
+=======
+use core_h5p\local\library\autoloader;
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 use core_h5p\h5p_test_factory;
 
 defined('MOODLE_INTERNAL') || die();
@@ -36,7 +40,16 @@ defined('MOODLE_INTERNAL') || die();
  *
  * @runTestsInSeparateProcesses
  */
-class h5p_get_content_types_task_test extends advanced_testcase {
+class h5p_get_content_types_task_testcase extends advanced_testcase {
+
+    protected function setup(): void {
+        global $CFG;
+        parent::setUp();
+
+        autoloader::register();
+
+        require_once($CFG->libdir . '/tests/fixtures/testable_core_h5p.php');
+    }
 
     protected function setup() {
         global $CFG;

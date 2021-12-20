@@ -54,7 +54,11 @@ class mod_wiki_wikiparser_test extends basic_testcase {
             'link_callback_args' => ['swid' => 1],
         ]);
 
+<<<<<<< HEAD
         $this->assertContains($output, $parsingresult['parsed_text']);
+=======
+        $this->assertStringContainsString($output, $parsingresult['parsed_text']);
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     /**

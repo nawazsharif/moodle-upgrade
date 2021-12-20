@@ -116,9 +116,15 @@ class core_customfield_privacy_testcase extends provider_testcase {
         list($sql, $params) = $DB->get_in_or_equal([$courses[1]->id, $courses[2]->id], SQL_PARAMS_NAMED);
         $r = provider::get_customfields_data_contexts('core_course', 'course', '=0',
             $sql, $params);
+<<<<<<< HEAD
         $this->assertEquals([context_course::instance($courses[1]->id)->id,
             context_course::instance($courses[2]->id)->id],
             $r->get_contextids(), '', 0, 10, true);
+=======
+        $this->assertEqualsCanonicalizing([context_course::instance($courses[1]->id)->id,
+            context_course::instance($courses[2]->id)->id],
+            $r->get_contextids());
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     /**

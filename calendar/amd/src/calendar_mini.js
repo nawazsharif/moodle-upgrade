@@ -21,7 +21,10 @@
  * triggered within the calendar UI.
  *
  * @module     core_calendar/calendar_mini
+<<<<<<< HEAD
  * @package    core_calendar
+=======
+>>>>>>> remotes/origin/MOODLE_310_STABLE
  * @copyright  2017 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
