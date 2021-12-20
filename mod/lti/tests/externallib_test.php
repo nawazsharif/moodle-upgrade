@@ -45,7 +45,11 @@ class mod_lti_external_testcase extends externallib_advanced_testcase {
     /**
      * Set up for every test
      */
+<<<<<<< HEAD
     public function setUp() {
+=======
+    public function setUp(): void {
+>>>>>>> remotes/origin/MOODLE_310_STABLE
         $this->resetAfterTest();
     }
 

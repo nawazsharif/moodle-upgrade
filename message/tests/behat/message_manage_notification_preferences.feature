@@ -90,4 +90,8 @@ Feature: Manage notification preferences - Email
     And I open messaging
     And I open messaging settings preferences
     And I should see "Notification preferences"
+<<<<<<< HEAD
     And I should see "Jabber"
+=======
+    And I should see "Jabber"
+>>>>>>> remotes/origin/MOODLE_310_STABLE

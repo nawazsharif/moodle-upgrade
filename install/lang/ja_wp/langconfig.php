@@ -30,4 +30,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['parentlanguage'] = 'ja';
+<<<<<<< HEAD
 $string['thislanguage'] = '日本語 - Workplace';
+=======
+$string['thislanguage'] = 'Workplace準拠の日本語';
+>>>>>>> remotes/origin/MOODLE_310_STABLE

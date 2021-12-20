@@ -33,13 +33,29 @@ defined('MOODLE_INTERNAL') || die();
 function xmldb_tool_cohortroles_upgrade($oldversion) {
     global $DB;
 
+<<<<<<< HEAD
     if ($oldversion < 2019111801) {
+=======
+    if ($oldversion < 2020020600) {
+>>>>>>> remotes/origin/MOODLE_310_STABLE
         // Delete any tool_cohortroles mappings for roles which no longer exist.
         $DB->delete_records_select('tool_cohortroles', 'roleid NOT IN (SELECT id FROM {role})');
 
         // Cohortroles savepoint reached.
+<<<<<<< HEAD
         upgrade_plugin_savepoint(true, 2019111801, 'tool', 'cohortroles');
     }
 
+=======
+        upgrade_plugin_savepoint(true, 2020020600, 'tool', 'cohortroles');
+    }
+
+    // Automatically generated Moodle v3.9.0 release upgrade line.
+    // Put any upgrade step following this.
+
+    // Automatically generated Moodle v3.10.0 release upgrade line.
+    // Put any upgrade step following this.
+
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     return true;
 }

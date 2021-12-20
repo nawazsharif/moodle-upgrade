@@ -27,7 +27,10 @@ Feature: Edit user roles
     And I click on "Student 1's role assignments" "link"
     And I type "Non-editing teacher"
     And I press the enter key
+<<<<<<< HEAD
     And I press the escape key
+=======
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     When I click on "Save changes" "link"
     Then I should see "Student, Non-editing teacher" in the "Student 1" "table_row"
 

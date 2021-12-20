@@ -66,7 +66,7 @@ abstract class question_engine {
      * {@link save_questions_usage_by_activity()}.
      *
      * @param string $component the plugin creating this attempt. For example mod_quiz.
-     * @param object $context the context this usage belongs to.
+     * @param context $context the context this usage belongs to.
      * @return question_usage_by_activity the newly created object.
      */
     public static function make_questions_usage_by_activity($component, $context) {
@@ -432,7 +432,7 @@ abstract class question_engine {
     public static function get_all_response_file_areas() {
         $variables = array();
         foreach (question_bank::get_all_qtypes() as $qtype) {
-            $variables += $qtype->response_file_areas();
+            $variables = array_merge($variables, $qtype->response_file_areas());
         }
 
         $areas = array();
@@ -627,7 +627,7 @@ class question_display_options {
     public $editquestionparams = array();
 
     /**
-     * @var int the context the attempt being output belongs to.
+     * @var context the context the attempt being output belongs to.
      */
     public $context;
 
@@ -696,7 +696,7 @@ abstract class question_flags {
     public static function get_postdata(question_attempt $qa) {
         $qaid = $qa->get_database_id();
         $qubaid = $qa->get_usage_id();
-        $qid = $qa->get_question()->id;
+        $qid = $qa->get_question_id();
         $slot = $qa->get_slot();
         $checksum = self::get_toggle_checksum($qubaid, $qid, $qaid, $slot);
         return "qaid={$qaid}&qubaid={$qubaid}&qid={$qid}&slot={$slot}&checksum={$checksum}&sesskey=" .
@@ -1011,9 +1011,10 @@ abstract class question_utils {
     /**
      * Get the options required to configure the filepicker for one of the editor
      * toolbar buttons.
+     *
      * @param mixed $acceptedtypes array of types of '*'.
      * @param int $draftitemid the draft area item id.
-     * @param object $context the context.
+     * @param context $context the context.
      * @return object the required options.
      */
     protected static function specific_filepicker_options($acceptedtypes, $draftitemid, $context) {
@@ -1034,7 +1035,8 @@ abstract class question_utils {
 
     /**
      * Get filepicker options for question related text areas.
-     * @param object $context the context.
+     *
+     * @param context $context the context.
      * @param int $draftitemid the draft area item id.
      * @return array An array of options
      */
@@ -1048,7 +1050,8 @@ abstract class question_utils {
 
     /**
      * Get editor options for question related text areas.
-     * @param object $context the context.
+     *
+     * @param context $context the context.
      * @return array An array of options
      */
     public static function get_editor_options($context) {

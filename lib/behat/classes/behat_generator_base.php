@@ -25,10 +25,18 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+<<<<<<< HEAD
 use Behat\Gherkin\Node\TableNode as TableNode;
 use Behat\Behat\Tester\Exception\PendingException as PendingException;
 
 
+=======
+require_once(__DIR__ . '/../../behat/behat_base.php');
+
+use Behat\Gherkin\Node\TableNode as TableNode;
+use Behat\Behat\Tester\Exception\PendingException as PendingException;
+
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 /**
  * Class to quickly create Behat test data using component data generators.
  *
@@ -368,6 +376,28 @@ abstract class behat_generator_base {
     }
 
     /**
+<<<<<<< HEAD
+=======
+     * Gets the course cmid for the specified activity based on the activity's idnumber.
+     *
+     * Note: this does not check the module type, only the idnumber.
+     *
+     * @throws Exception
+     * @param string $idnumber
+     * @return int
+     */
+    protected function get_activity_id(string $idnumber) {
+        global $DB;
+
+        if (!$id = $DB->get_field('course_modules', 'id', ['idnumber' => $idnumber])) {
+            throw new Exception('The specified activity with idnumber "' . $idnumber . '" could not be found.');
+        }
+
+        return $id;
+    }
+
+    /**
+>>>>>>> remotes/origin/MOODLE_310_STABLE
      * Gets the group id from it's idnumber.
      * @throws Exception
      * @param string $idnumber
@@ -480,6 +510,7 @@ abstract class behat_generator_base {
      * @return context
      */
     protected function get_context($levelname, $contextref) {
+<<<<<<< HEAD
         global $DB;
 
         // Getting context levels and names (we will be using the English ones as it is the test site language).
@@ -527,6 +558,9 @@ abstract class behat_generator_base {
         }
 
         return $context;
+=======
+        return behat_base::get_context($levelname, $contextref);
+>>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     /**
@@ -543,4 +577,63 @@ abstract class behat_generator_base {
         }
         return $id;
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * Gets the external backpack id from it's backpackweburl.
+     * @param string $backpackweburl
+     * @return mixed
+     * @throws dml_exception
+     */
+    protected function get_externalbackpack_id($backpackweburl) {
+        global $DB;
+        if (!$id = $DB->get_field('badge_external_backpack', 'id', ['backpackweburl' => $backpackweburl])) {
+            throw new Exception('The specified external backpack with backpackweburl "' . $username . '" does not exist');
+        }
+        return $id;
+    }
+
+    /**
+     * Get a coursemodule from an activity name or idnumber.
+     *
+     * @param string $activity
+     * @param string $identifier
+     * @return cm_info
+     */
+    protected function get_cm_by_activity_name(string $activity, string $identifier): cm_info {
+        global $DB;
+
+        $coursetable = new \core\dml\table('course', 'c', 'c');
+        $courseselect = $coursetable->get_field_select();
+        $coursefrom = $coursetable->get_from_sql();
+
+        $cmtable = new \core\dml\table('course_modules', 'cm', 'cm');
+        $cmfrom = $cmtable->get_from_sql();
+
+        $acttable = new \core\dml\table($activity, 'a', 'a');
+        $actselect = $acttable->get_field_select();
+        $actfrom = $acttable->get_from_sql();
+
+        $sql = <<<EOF
+    SELECT cm.id as cmid, {$courseselect}, {$actselect}
+      FROM {$cmfrom}
+INNER JOIN {$coursefrom} ON c.id = cm.course
+INNER JOIN {modules} m ON m.id = cm.module AND m.name = :modname
+INNER JOIN {$actfrom} ON cm.instance = a.id
+     WHERE cm.idnumber = :idnumber OR a.name = :name
+EOF;
+
+        $result = $DB->get_record_sql($sql, [
+            'modname' => $activity,
+            'idnumber' => $identifier,
+            'name' => $identifier,
+        ], MUST_EXIST);
+
+        $course = $coursetable->extract_from_result($result);
+        $instancedata = $acttable->extract_from_result($result);
+
+        return get_fast_modinfo($course)->get_cm($result->cmid);
+    }
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 }

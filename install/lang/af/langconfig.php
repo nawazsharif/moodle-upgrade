@@ -29,5 +29,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+<<<<<<< HEAD
+=======
+$string['parentlanguage'] = '';
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 $string['thisdirection'] = 'ltr';
 $string['thislanguage'] = 'Afrikaans';

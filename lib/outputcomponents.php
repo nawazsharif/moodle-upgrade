@@ -877,6 +877,7 @@ class single_button implements renderable {
      * @param moodle_url $url
      * @param string $label button text
      * @param string $method get or post submit method
+     * @param bool $primary whether this is a primary button, used for styling
      * @param array $attributes Attributes for the HTML button tag
      */
     public function __construct(moodle_url $url, $label, $method='post', $primary=false, $attributes = []) {
@@ -1853,6 +1854,8 @@ class html_writer {
     /**
      * Generates a simple select form field
      *
+     * Note this function does HTML escaping on the optgroup labels, but not on the choice labels.
+     *
      * @param array $options associative array value=>label ex.:
      *                array(1=>'One, 2=>Two)
      *              it is also possible to specify optgroup as complex label array ex.:
@@ -2769,6 +2772,11 @@ class html_table {
      * The "summary" attribute on the "table" element is not supported in HTML5.
      * Consider describing the structure of the table in a "caption" element or in a "figure" element containing the table;
      * or, simplify the structure of the table so that no description is needed.
+<<<<<<< HEAD
+=======
+     *
+     * @deprecated since Moodle 3.9.
+>>>>>>> remotes/origin/MOODLE_310_STABLE
      */
     public $summary;
 
@@ -3089,6 +3097,7 @@ class paging_bar implements renderable, templatable {
         $data->label = get_string('page');
         $data->pages = [];
         $data->haspages = $this->totalcount > $this->perpage;
+        $data->pagesize = $this->perpage;
 
         if (!$data->haspages) {
             return $data;

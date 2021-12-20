@@ -45,6 +45,7 @@
     max-width: 100%;
     flex: 0 0 100%;
     text-align: left;
+<<<<<<< HEAD
 }
 
 @media all and (-ms-high-contrast: none) {  /* IE10 & IE11 hack */
@@ -53,6 +54,8 @@
         width: 100%;
         table-layout: fixed;
     }
+=======
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 }
 
 .path-mod-workshop .mform.frozen #id_rubric-grid-wrapper .fitem .felement,

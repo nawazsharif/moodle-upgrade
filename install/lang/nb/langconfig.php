@@ -30,4 +30,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['parentlanguage'] = 'no';
+<<<<<<< HEAD
 $string['thislanguage'] = 'Norsk Bokmål';
+=======
+$string['thislanguage'] = 'Norsk - bokmål';
+>>>>>>> remotes/origin/MOODLE_310_STABLE

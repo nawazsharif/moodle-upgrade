@@ -27,12 +27,21 @@
 
 require_once(__DIR__ . '/../../behat/behat_base.php');
 
+<<<<<<< HEAD
 use Behat\Gherkin\Node\TableNode as TableNode;
 use Behat\Mink\Exception\DriverException as DriverException;
 use Behat\Mink\Exception\ElementNotFoundException as ElementNotFoundException;
 use Behat\Mink\Exception\ExpectationException as ExpectationException;
 use WebDriver\Exception\NoSuchElement as NoSuchElement;
 use WebDriver\Exception\StaleElementReference as StaleElementReference;
+=======
+use Behat\Gherkin\Node\TableNode;
+use Behat\Mink\Exception\DriverException;
+use Behat\Mink\Exception\ElementNotFoundException;
+use Behat\Mink\Exception\ExpectationException;
+use Facebook\WebDriver\Exception\NoSuchElementException;
+use Facebook\WebDriver\Exception\StaleElementReferenceException;
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 
 /**
  * Cross component steps definitions.
@@ -121,9 +130,9 @@ class behat_general extends behat_base {
         // Wrapped in try & catch in case the redirection has already been executed.
         try {
             $content = $metarefresh->getAttribute('content');
-        } catch (NoSuchElement $e) {
+        } catch (NoSuchElementException $e) {
             return true;
-        } catch (StaleElementReference $e) {
+        } catch (StaleElementReferenceException $e) {
             return true;
         }
 
@@ -159,49 +168,30 @@ class behat_general extends behat_base {
      * Switches to the specified iframe.
      *
      * @Given /^I switch to "(?P<iframe_name_string>(?:[^"]|\\")*)" iframe$/
-     * @param string $iframename
-     */
-    public function switch_to_iframe($iframename) {
-
-        // We spin to give time to the iframe to be loaded.
-        // Using extended timeout as we don't know about which
-        // kind of iframe will be loaded.
-        $this->spin(
-            function($context, $iframename) {
-                $context->getSession()->switchToIFrame($iframename);
-
-                // If no exception we are done.
-                return true;
-            },
-            $iframename,
-            behat_base::get_extended_timeout()
-        );
-    }
-
-    /**
-     * Switches to the iframe containing specified class.
-     *
      * @Given /^I switch to "(?P<iframe_name_string>(?:[^"]|\\")*)" class iframe$/
-     * @param string $classname
+     * @param string $name The name of the iframe
      */
-    public function switch_to_class_iframe($classname) {
+    public function switch_to_iframe($name) {
         // We spin to give time to the iframe to be loaded.
         // Using extended timeout as we don't know about which
         // kind of iframe will be loaded.
         $this->spin(
-            function($context, $classname) {
-                $iframe = $this->find('iframe', $classname);
-                if (!empty($iframe->getAttribute('id'))) {
-                    $iframename = $iframe->getAttribute('id');
-                } else {
+            function($context) use ($name){
+                $iframe = $context->find('iframe', $name);
+                if ($iframe->hasAttribute('name')) {
                     $iframename = $iframe->getAttribute('name');
+                } else {
+                    if (!$this->running_javascript()) {
+                        throw new \coding_exception('iframe must have a name attribute to use the switchTo command.');
+                    }
+                    $iframename = uniqid();
+                    $this->execute_js_on_node($iframe, "{{ELEMENT}}.name = '{$iframename}';");
                 }
                 $context->getSession()->switchToIFrame($iframename);
 
                 // If no exception we are done.
                 return true;
             },
-            $classname,
             behat_base::get_extended_timeout()
         );
     }
@@ -222,6 +212,7 @@ class behat_general extends behat_base {
      * @param string $windowname
      */
     public function switch_to_window($windowname) {
+<<<<<<< HEAD
         // In Behat, some browsers (e.g. Chrome) are unable to switch to a
         // window without a name, and by default the main browser window does
         // not have a name. To work-around this, when we switch away from an
@@ -229,6 +220,13 @@ class behat_general extends behat_base {
         // window, then we first set the main window name to a conventional
         // value that we can later use this name to switch back.
         $this->execute_script('if (window.name == "") window.name = "' . self::MAIN_WINDOW_NAME . '"');
+=======
+        if ($windowname === self::MAIN_WINDOW_NAME) {
+            // When switching to the main window normalise the window name to null.
+            // This is normalised further in the Mink driver to the root window ID.
+            $windowname = null;
+        }
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 
         $this->getSession()->switchToWindow($windowname);
     }
@@ -239,7 +237,31 @@ class behat_general extends behat_base {
      * @Given /^I switch to the main window$/
      */
     public function switch_to_the_main_window() {
-        $this->getSession()->switchToWindow(self::MAIN_WINDOW_NAME);
+        $this->switch_to_window(self::MAIN_WINDOW_NAME);
+    }
+
+    /**
+     * Closes all extra windows opened during the navigation.
+     *
+     * This assumes all popups are opened by the main tab and you will now get back.
+     *
+     * @Given /^I close all opened windows$/
+     * @throws DriverException If there aren't exactly 1 tabs open when finish or no javascript running
+     */
+    public function i_close_all_opened_windows() {
+        if (!$this->running_javascript()) {
+            throw new DriverException('Closing windows steps require javascript');
+        }
+        $names = $this->getSession()->getWindowNames();
+        for ($index = 1; $index < count($names); $index ++) {
+            $this->getSession()->switchToWindow($names[$index]);
+            $this->execute_script("window.open('', '_self').close();");
+        }
+        $names = $this->getSession()->getWindowNames();
+        if (count($names) !== 1) {
+            throw new DriverException('Expected to see 1 tabs open, not ' . count($names));
+        }
+        $this->getSession()->switchToWindow($names[0]);
     }
 
     /**
@@ -247,7 +269,7 @@ class behat_general extends behat_base {
      * @Given /^I accept the currently displayed dialog$/
      */
     public function accept_currently_displayed_alert_dialog() {
-        $this->getSession()->getDriver()->getWebDriverSession()->accept_alert();
+        $this->getSession()->getDriver()->getWebDriver()->switchTo()->alert()->accept();
     }
 
     /**
@@ -255,7 +277,7 @@ class behat_general extends behat_base {
      * @Given /^I dismiss the currently displayed dialog$/
      */
     public function dismiss_currently_displayed_alert_dialog() {
-        $this->getSession()->getDriver()->getWebDriverSession()->dismiss_alert();
+        $this->getSession()->getDriver()->getWebDriver()->switchTo()->alert()->dismiss();
     }
 
     /**
@@ -343,9 +365,9 @@ class behat_general extends behat_base {
      * @param string $selectortype The type of what we look for
      */
     public function i_hover($element, $selectortype) {
-
         // Gets the node based on the requested selector type and locator.
         $node = $this->get_selected_node($selectortype, $element);
+        $this->execute_js_on_node($node, '{{ELEMENT}}.scrollIntoView();');
         $node->mouseOver();
     }
 
@@ -394,7 +416,8 @@ class behat_general extends behat_base {
      */
     public function i_click_on_confirming_the_dialogue($element, $selectortype) {
         $this->i_click_on($element, $selectortype);
-        $this->accept_currently_displayed_alert_dialog();
+        $this->execute('behat_general::accept_currently_displayed_alert_dialog', []);
+        $this->wait_until_the_page_is_ready();
     }
 
     /**
@@ -407,7 +430,8 @@ class behat_general extends behat_base {
      */
     public function i_click_on_dismissing_the_dialogue($element, $selectortype) {
         $this->i_click_on($element, $selectortype);
-        $this->dismiss_currently_displayed_alert_dialog();
+        $this->execute('behat_general::dismiss_currently_displayed_alert_dialog', []);
+        $this->wait_until_the_page_is_ready();
     }
 
     /**
@@ -656,7 +680,7 @@ class behat_general extends behat_base {
                             throw new ExpectationException('"' . $args['text'] . '" text was found in the page',
                                 $context->getSession());
                         }
-                    } catch (WebDriver\Exception\NoSuchElement $e) {
+                    } catch (NoSuchElementException $e) {
                         // Do nothing just return, as element is no more on page.
                         return true;
                     } catch (ElementNotFoundException $e) {
@@ -1570,7 +1594,7 @@ EOF;
 
         if ($content !== $expectedcontent) {
             throw new ExpectationException('Image is not identical to the fixture. Received ' .
-            strlen($content) . ' bytes and expected ' . strlen($expectedcontent) . ' bytes');
+            strlen($content) . ' bytes and expected ' . strlen($expectedcontent) . ' bytes', $this->getSession());
         }
     }
 
@@ -1712,7 +1736,11 @@ EOF;
     }
 
     /**
+<<<<<<< HEAD
      * Press a named key with an optional set of modifiers.
+=======
+     * Press a named or character key with an optional set of modifiers.
+>>>>>>> remotes/origin/MOODLE_310_STABLE
      *
      * Supported named keys are:
      * - up
@@ -1730,6 +1758,11 @@ EOF;
      * - enter
      * - tab
      *
+<<<<<<< HEAD
+=======
+     * You can also use a single character for the key name e.g. 'Ctrl C'.
+     *
+>>>>>>> remotes/origin/MOODLE_310_STABLE
      * Supported moderators are:
      * - shift
      * - ctrl
@@ -1778,6 +1811,7 @@ EOF;
         $modifier = trim($key);
         switch (strtoupper($key)) {
             case 'UP':
+<<<<<<< HEAD
                 $keys[] = behat_keys::UP_ARROW;
                 break;
             case 'DOWN':
@@ -1788,6 +1822,18 @@ EOF;
                 break;
             case 'RIGHT':
                 $keys[] = behat_keys::RIGHT_ARROW;
+=======
+                $keys[] = behat_keys::ARROW_UP;
+                break;
+            case 'DOWN':
+                $keys[] = behat_keys::ARROW_DOWN;
+                break;
+            case 'LEFT':
+                $keys[] = behat_keys::ARROW_LEFT;
+                break;
+            case 'RIGHT':
+                $keys[] = behat_keys::ARROW_RIGHT;
+>>>>>>> remotes/origin/MOODLE_310_STABLE
                 break;
             case 'HOME':
                 $keys[] = behat_keys::HOME;
@@ -1825,12 +1871,23 @@ EOF;
                 $keys[] = behat_keys::SPACE;
                 break;
             default:
+<<<<<<< HEAD
                 throw new \coding_exception("Unknown key '$key'}");
         }
 
         // Always send the NULL key as the last key.
         $keys[] = behat_keys::NULL_KEY;
 
+=======
+                // You can enter a single ASCII character (e.g. a letter) to directly type that key.
+                if (strlen($key) === 1) {
+                    $keys[] = strtolower($key);
+                } else {
+                    throw new \coding_exception("Unknown key '$key'}");
+                }
+        }
+
+>>>>>>> remotes/origin/MOODLE_310_STABLE
         behat_base::type_keys($this->getSession(), $keys);
     }
 
@@ -1858,7 +1915,8 @@ EOF;
             list($modifier, $char) = preg_split('/-/', $key, 2);
             $modifier = strtolower($modifier);
             if (!in_array($modifier, $validmodifiers)) {
-                throw new ExpectationException(sprintf('Unknown key modifier: %s.', $modifier));
+                throw new ExpectationException(sprintf('Unknown key modifier: %s.', $modifier),
+                    $this->getSession());
             }
         }
         if (is_numeric($char)) {
@@ -2063,4 +2121,18 @@ EOF;
         $localurl = new moodle_url($localurl);
         $this->getSession()->visit($this->locate_path($localurl->out_as_local_url(false)));
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * Increase the webdriver timeouts.
+     *
+     * This should be reset between scenarios, or can be called again to decrease the timeouts.
+     *
+     * @Given I mark this test as slow setting a timeout factor of :factor
+     */
+    public function i_mark_this_test_as_long_running(int $factor = 2): void {
+        $this->set_test_timeout_factor($factor);
+    }
+>>>>>>> remotes/origin/MOODLE_310_STABLE
 }

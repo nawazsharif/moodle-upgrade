@@ -83,6 +83,10 @@ class core_gradelib_testcase extends advanced_testcase {
         $letters = $cache->get($context->id);
         $this->assertFalse($letters);
 
+<<<<<<< HEAD
+=======
+        // Call the function.
+>>>>>>> remotes/origin/MOODLE_310_STABLE
         grade_get_letters($context);
 
         $letters = $cache->get($context->id);
@@ -253,6 +257,10 @@ class core_gradelib_testcase extends advanced_testcase {
 
         $this->resetAfterTest();
 
+<<<<<<< HEAD
+=======
+        // Setup some basics.
+>>>>>>> remotes/origin/MOODLE_310_STABLE
         $course = $this->getDataGenerator()->create_course();
         $context = context_course::instance($course->id);
 
