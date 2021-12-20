@@ -273,7 +273,7 @@ class core_course_management_renderer extends plugin_renderer_base {
         $html .= html_writer::end_div();
         $html .= $icon;
         if ($hasactions) {
-            $textattributes = array('class' => 'float-left categoryname aalink');
+            $textattributes = array('class' => 'float-left categoryname');
         } else {
             $textattributes = array('class' => 'float-left categoryname without-actions');
         }
@@ -382,7 +382,9 @@ class core_course_management_renderer extends plugin_renderer_base {
     }
 
     public function render_action_menu($menu) {
-        return $this->output->render($menu);
+        global $OUTPUT;
+
+        return $OUTPUT->render($menu);
     }
 
     /**
@@ -646,13 +648,9 @@ class core_course_management_renderer extends plugin_renderer_base {
         $html .= html_writer::tag('label', $labeltext, array(
             'class' => 'custom-control-label',
             'for' => 'courselistitem' . $course->id));
-<<<<<<< HEAD
-        $html .= html_writer::end_div();
-=======
->>>>>>> remotes/origin/MOODLE_310_STABLE
         $html .= html_writer::end_div();
         $html .= html_writer::end_div();
-        $html .= html_writer::link($viewcourseurl, $text, array('class' => 'float-left coursename aalink'));
+        $html .= html_writer::link($viewcourseurl, $text, array('class' => 'float-left coursename'));
         $html .= html_writer::start_div('float-right');
         if ($course->idnumber) {
             $html .= html_writer::tag('span', s($course->idnumber), array('class' => 'text-muted idnumber'));
@@ -1227,11 +1225,7 @@ class core_course_management_renderer extends plugin_renderer_base {
             $html .= html_writer::end_div();
         }
         $html .= html_writer::end_div();
-<<<<<<< HEAD
         $html .= html_writer::link($viewcourseurl, $text, array('class' => 'float-left coursename'));
-=======
-        $html .= html_writer::link($viewcourseurl, $text, array('class' => 'float-left coursename aalink'));
->>>>>>> remotes/origin/MOODLE_310_STABLE
         $html .= html_writer::tag('span', $categoryname, array('class' => 'float-left ml-3 text-muted'));
         $html .= html_writer::start_div('float-right');
         $html .= $this->search_listitem_actions($course);
@@ -1299,9 +1293,9 @@ class core_course_management_renderer extends plugin_renderer_base {
      * Renders html to display a course search form
      *
      * @param string $value default value to populate the search field
+     * @param string $format display format - 'plain' (default), 'short' or 'navbar'
      * @return string
      */
-<<<<<<< HEAD
     public function course_search_form($value = '', $format = 'plain') {
         static $count = 0;
         $formid = 'coursesearch';
@@ -1349,19 +1343,6 @@ class core_course_management_renderer extends plugin_renderer_base {
         $output .= html_writer::end_div();
 
         return $output;
-=======
-    public function course_search_form($value = '') {
-
-        $data = [
-            'action' => new moodle_url('/course/management.php'),
-            'btnclass' => 'btn-primary',
-            'extraclasses' => 'my-3 d-flex justify-content-center',
-            'inputname' => 'search',
-            'searchstring' => get_string('searchcourses'),
-            'value' => $value
-        ];
-        return $this->render_from_template('core/search_input', $data);
->>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     /**

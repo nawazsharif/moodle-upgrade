@@ -123,8 +123,7 @@ function chat_add_instance($chat) {
         $event = new stdClass();
         $event->type        = CALENDAR_EVENT_TYPE_ACTION;
         $event->name        = $chat->name;
-        $event->description = format_module_intro('chat', $chat, $chat->coursemodule, false);
-        $event->format      = FORMAT_HTML;
+        $event->description = format_module_intro('chat', $chat, $chat->coursemodule);
         $event->courseid    = $chat->course;
         $event->groupid     = 0;
         $event->userid      = 0;
@@ -170,8 +169,7 @@ function chat_update_instance($chat) {
         if ($chat->schedule > 0) {
             $event->type        = CALENDAR_EVENT_TYPE_ACTION;
             $event->name        = $chat->name;
-            $event->description = format_module_intro('chat', $chat, $chat->coursemodule, false);
-            $event->format      = FORMAT_HTML;
+            $event->description = format_module_intro('chat', $chat, $chat->coursemodule);
             $event->timestart   = $chat->chattime;
             $event->timesort    = $chat->chattime;
 
@@ -188,8 +186,7 @@ function chat_update_instance($chat) {
             $event = new stdClass();
             $event->type        = CALENDAR_EVENT_TYPE_ACTION;
             $event->name        = $chat->name;
-            $event->description = format_module_intro('chat', $chat, $chat->coursemodule, false);
-            $event->format      = FORMAT_HTML;
+            $event->description = format_module_intro('chat', $chat, $chat->coursemodule);
             $event->courseid    = $chat->course;
             $event->groupid     = 0;
             $event->userid      = 0;
@@ -337,7 +334,7 @@ function chat_print_recent_activity($course, $viewfullnames, $timestart) {
     $strftimerecent = get_string('strftimerecent');
 
     if ($past) {
-        echo $OUTPUT->heading(get_string("pastchats", 'chat') . ':', 6);
+        echo $OUTPUT->heading(get_string("pastchats", 'chat').':', 3);
 
         foreach ($past as $cm) {
             $link = $CFG->wwwroot.'/mod/chat/view.php?id='.$cm->id;
@@ -348,7 +345,7 @@ function chat_print_recent_activity($course, $viewfullnames, $timestart) {
     }
 
     if ($current) {
-        echo $OUTPUT->heading(get_string("currentchats", 'chat') . ':', 6);
+        echo $OUTPUT->heading(get_string("currentchats", 'chat').':', 3);
 
         $oldest = floor((time() - $CFG->chat_old_ping) / 10) * 10;  // Better db caching.
 
@@ -463,8 +460,7 @@ function chat_prepare_update_events($chat, $cm = null) {
     $event = new stdClass();
     $event->name        = $chat->name;
     $event->type        = CALENDAR_EVENT_TYPE_ACTION;
-    $event->description = format_module_intro('chat', $chat, $cm->id, false);
-    $event->format      = FORMAT_HTML;
+    $event->description = format_module_intro('chat', $chat, $cm->id);
     $event->timestart   = $chat->chattime;
     $event->timesort    = $chat->chattime;
     if ($event->id = $DB->get_field('event', 'id', array('modulename' => 'chat', 'instance' => $chat->id,

@@ -297,8 +297,7 @@ function assign_update_events($assign, $override = null) {
 
         $event = new stdClass();
         $event->type = CALENDAR_EVENT_TYPE_ACTION;
-        $event->description = format_module_intro('assign', $assigninstance, $cmid, false);
-        $event->format = FORMAT_HTML;
+        $event->description = format_module_intro('assign', $assigninstance, $cmid);
         // Events module won't show user events when the courseid is nonzero.
         $event->courseid    = ($userid) ? 0 : $assigninstance->course;
         $event->groupid     = $groupid;
@@ -665,7 +664,7 @@ function assign_print_recent_activity($course, $viewfullnames, $timestart) {
         return false;
     }
 
-    echo $OUTPUT->heading(get_string('newsubmissions', 'assign') . ':', 6);
+    echo $OUTPUT->heading(get_string('newsubmissions', 'assign').':', 3);
 
     foreach ($show as $submission) {
         $cm = $modinfo->get_cm($submission->cmid);
@@ -1552,8 +1551,8 @@ function mod_assign_core_calendar_provide_event_action(calendar_event $event,
             'id' => $cm->id,
             'action' => 'grader'
         ]);
+        $itemcount = $assign->count_submissions_need_grading();
         $actionable = $assign->can_grade($userid) && (time() >= $assign->get_instance()->allowsubmissionsfromdate);
-        $itemcount = $actionable ? $assign->count_submissions_need_grading() : 0;
     } else {
         $usersubmission = $assign->get_user_submission($userid, false);
         if ($usersubmission && $usersubmission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {

@@ -81,7 +81,7 @@ if ($currentuser > 0) {
     $user = core_user::get_user($currentuser);
     $usercontext = context_user::instance($currentuser);
     $userheading = array(
-        'heading' => fullname($user, has_capability('moodle/site:viewfullnames', $context)),
+        'heading' => fullname($user),
         'user' => $user,
         'usercontext' => $usercontext
     );

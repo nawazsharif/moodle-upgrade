@@ -34,7 +34,6 @@ $output = $PAGE->get_renderer('core', 'badges');
 
 $id = optional_param('id', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHA);
-$confirm = optional_param('confirm', 1, PARAM_BOOL);
 
 $PAGE->set_pagelayout('admin');
 $url = new moodle_url('/badges/backpacks.php');
@@ -46,18 +45,6 @@ if (empty($CFG->badges_allowexternalbackpack)) {
 $PAGE->set_url($url);
 $PAGE->set_title(get_string('managebackpacks', 'badges'));
 $PAGE->set_heading($SITE->fullname);
-
-$msg = '';
-$msgtype = 'error';
-if ($action == 'delete' && $confirm && confirm_sesskey()) {
-    if (badges_delete_site_backpack($id)) {
-        $msg = get_string('sitebackpackdeleted', 'badges');
-        $msgtype = 'notifysuccess';
-    } else {
-        $msg = get_string('sitebackpacknotdeleted', 'badges');
-    }
-}
-
 if ($action == 'edit') {
     $backpack = null;
     if (!empty($id)) {
@@ -69,11 +56,7 @@ if ($action == 'edit') {
     } else if ($data = $form->get_data()) {
         require_sesskey();
         if (!empty($data->id)) {
-            $id = $data->id;
-            badges_update_site_backpack($id, $data);
-            // Apart from the password, any change here would result in an error in other parts of the badge systems.
-            // In order to negate this, we restart any further mapping from scratch.
-            badges_external_delete_mappings($id);
+            badges_update_site_backpack($data->id, $data);
         } else {
             badges_create_site_backpack($data);
         }
@@ -96,9 +79,6 @@ if ($action == 'edit') {
     echo $OUTPUT->header();
     echo $output->heading(get_string('managebackpacks', 'badges'));
 
-    if ($msg) {
-        echo $OUTPUT->notification($msg, $msgtype);
-    }
     $page = new \core_badges\output\external_backpacks_page($url);
     echo $output->render($page);
 }

@@ -17,29 +17,21 @@
 
 namespace MongoDB\Operation;
 
-use ArrayIterator;
 use MongoDB\BSON\JavascriptInterface;
 use MongoDB\Driver\Command;
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnexpectedValueException;
 use MongoDB\Exception\UnsupportedException;
+use MongoDB\Model\TypeMapArrayIterator;
 use MongoDB\MapReduceResult;
+use ArrayIterator;
 use stdClass;
-use function current;
-use function is_array;
-use function is_bool;
-use function is_integer;
-use function is_object;
-use function is_string;
-use function MongoDB\create_field_path_type_map;
-use function MongoDB\is_mapreduce_output_inline;
-use function MongoDB\server_supports_feature;
 
 /**
  * Operation for the mapReduce command.
@@ -50,34 +42,16 @@ use function MongoDB\server_supports_feature;
  */
 class MapReduce implements Executable
 {
-    /** @var integer */
     private static $wireVersionForCollation = 5;
-
-    /** @var integer */
     private static $wireVersionForDocumentLevelValidation = 4;
-
-    /** @var integer */
     private static $wireVersionForReadConcern = 4;
-
-    /** @var integer */
     private static $wireVersionForWriteConcern = 4;
 
-    /** @var string */
     private $databaseName;
-
-    /** @var string */
     private $collectionName;
-
-    /** @var JavascriptInterface */
     private $map;
-
-    /** @var JavascriptInterface */
     private $reduce;
-
-    /** @var array|object|string */
     private $out;
-
-    /** @var array */
     private $options;
 
     /**
@@ -170,7 +144,7 @@ class MapReduce implements Executable
      */
     public function __construct($databaseName, $collectionName, JavascriptInterface $map, JavascriptInterface $reduce, $out, array $options = [])
     {
-        if (! is_string($out) && ! is_array($out) && ! is_object($out)) {
+        if ( ! is_string($out) && ! is_array($out) && ! is_object($out)) {
             throw InvalidArgumentException::invalidType('$out', $out, 'string or array or object');
         }
 
@@ -183,7 +157,7 @@ class MapReduce implements Executable
         }
 
         if (isset($options['finalize']) && ! $options['finalize'] instanceof JavascriptInterface) {
-            throw InvalidArgumentException::invalidType('"finalize" option', $options['finalize'], JavascriptInterface::class);
+            throw InvalidArgumentException::invalidType('"finalize" option', $options['finalize'], 'MongoDB\Driver\Javascript');
         }
 
         if (isset($options['jsMode']) && ! is_bool($options['jsMode'])) {
@@ -203,11 +177,11 @@ class MapReduce implements Executable
         }
 
         if (isset($options['readConcern']) && ! $options['readConcern'] instanceof ReadConcern) {
-            throw InvalidArgumentException::invalidType('"readConcern" option', $options['readConcern'], ReadConcern::class);
+            throw InvalidArgumentException::invalidType('"readConcern" option', $options['readConcern'], 'MongoDB\Driver\ReadConcern');
         }
 
         if (isset($options['readPreference']) && ! $options['readPreference'] instanceof ReadPreference) {
-            throw InvalidArgumentException::invalidType('"readPreference" option', $options['readPreference'], ReadPreference::class);
+            throw InvalidArgumentException::invalidType('"readPreference" option', $options['readPreference'], 'MongoDB\Driver\ReadPreference');
         }
 
         if (isset($options['scope']) && ! is_array($options['scope']) && ! is_object($options['scope'])) {
@@ -215,7 +189,7 @@ class MapReduce implements Executable
         }
 
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
-            throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
         }
 
         if (isset($options['sort']) && ! is_array($options['sort']) && ! is_object($options['sort'])) {
@@ -231,7 +205,7 @@ class MapReduce implements Executable
         }
 
         if (isset($options['writeConcern']) && ! $options['writeConcern'] instanceof WriteConcern) {
-            throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], WriteConcern::class);
+            throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], 'MongoDB\Driver\WriteConcern');
         }
 
         if (isset($options['readConcern']) && $options['readConcern']->isDefault()) {
@@ -262,46 +236,26 @@ class MapReduce implements Executable
      */
     public function execute(Server $server)
     {
-        if (isset($this->options['collation']) && ! server_supports_feature($server, self::$wireVersionForCollation)) {
+        if (isset($this->options['collation']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForCollation)) {
             throw UnsupportedException::collationNotSupported();
         }
 
-        if (isset($this->options['readConcern']) && ! server_supports_feature($server, self::$wireVersionForReadConcern)) {
+        if (isset($this->options['readConcern']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForReadConcern)) {
             throw UnsupportedException::readConcernNotSupported();
         }
 
-        if (isset($this->options['writeConcern']) && ! server_supports_feature($server, self::$wireVersionForWriteConcern)) {
+        if (isset($this->options['writeConcern']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForWriteConcern)) {
             throw UnsupportedException::writeConcernNotSupported();
         }
 
-        $inTransaction = isset($this->options['session']) && $this->options['session']->isInTransaction();
-        if ($inTransaction) {
-            if (isset($this->options['readConcern'])) {
-                throw UnsupportedException::readConcernNotSupportedInTransaction();
-            }
-            if (isset($this->options['writeConcern'])) {
-                throw UnsupportedException::writeConcernNotSupportedInTransaction();
-            }
-        }
-
-        $hasOutputCollection = ! is_mapreduce_output_inline($this->out);
+        $hasOutputCollection = ! \MongoDB\is_mapreduce_output_inline($this->out);
 
         $command = $this->createCommand($server);
         $options = $this->createOptions($hasOutputCollection);
 
-        /* If the mapReduce operation results in a write, use
-         * executeReadWriteCommand to ensure we're handling the writeConcern
-         * option.
-         * In other cases, we use executeCommand as this will prevent the
-         * mapReduce operation from being retried when retryReads is enabled.
-         * See https://github.com/mongodb/specifications/blob/master/source/retryable-reads/retryable-reads.rst#unsupported-read-operations. */
         $cursor = $hasOutputCollection
             ? $server->executeReadWriteCommand($this->databaseName, $command, $options)
-            : $server->executeCommand($this->databaseName, $command, $options);
-
-        if (isset($this->options['typeMap']) && ! $hasOutputCollection) {
-            $cursor->setTypeMap(create_field_path_type_map($this->options['typeMap'], 'results.$'));
-        }
+            : $server->executeReadCommand($this->databaseName, $command, $options);
 
         $result = current($cursor->toArray());
 
@@ -337,9 +291,7 @@ class MapReduce implements Executable
             }
         }
 
-        if (! empty($this->options['bypassDocumentValidation']) &&
-            server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)
-        ) {
+        if (isset($this->options['bypassDocumentValidation']) && \MongoDB\server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)) {
             $cmd['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];
         }
 
@@ -360,7 +312,11 @@ class MapReduce implements Executable
         if (isset($result->results) && is_array($result->results)) {
             $results = $result->results;
 
-            return function () use ($results) {
+            return function() use ($results) {
+                if (isset($this->options['typeMap'])) {
+                    return new TypeMapArrayIterator($results, $this->options['typeMap']);
+                }
+
                 return new ArrayIterator($results);
             };
         }
@@ -372,7 +328,7 @@ class MapReduce implements Executable
                 ? new Find($this->databaseName, $result->result, [], $options)
                 : new Find($result->result->db, $result->result->collection, [], $options);
 
-            return function () use ($find, $server) {
+            return function() use ($find, $server) {
                 return $find->execute($server);
             };
         }
@@ -396,7 +352,7 @@ class MapReduce implements Executable
             $options['readConcern'] = $this->options['readConcern'];
         }
 
-        if (! $hasOutputCollection && isset($this->options['readPreference'])) {
+        if ( ! $hasOutputCollection && isset($this->options['readPreference'])) {
             $options['readPreference'] = $this->options['readPreference'];
         }
 

@@ -29,7 +29,7 @@ defined('MOODLE_INTERNAL') || die;
 use core_course\external\course_summary_exporter;
 
 require_once("$CFG->libdir/externallib.php");
-require_once(__DIR__ . "/lib.php");
+require_once("lib.php");
 
 /**
  * Course external functions
@@ -262,7 +262,6 @@ class core_course_external extends external_api {
                         $module['id'] = $cm->id;
                         $module['name'] = external_format_string($cm->name, $modcontext->id);
                         $module['instance'] = $cm->instance;
-                        $module['contextid'] = $modcontext->id;
                         $module['modname'] = (string) $cm->modname;
                         $module['modplural'] = (string) $cm->modplural;
                         $module['modicon'] = $cm->get_icon_url()->out(false);
@@ -450,7 +449,6 @@ class core_course_external extends external_api {
                                     'url' => new external_value(PARAM_URL, 'activity url', VALUE_OPTIONAL),
                                     'name' => new external_value(PARAM_RAW, 'activity module name'),
                                     'instance' => new external_value(PARAM_INT, 'instance id', VALUE_OPTIONAL),
-                                    'contextid' => new external_value(PARAM_INT, 'Activity context id.', VALUE_OPTIONAL),
                                     'description' => new external_value(PARAM_RAW, 'activity description', VALUE_OPTIONAL),
                                     'visible' => new external_value(PARAM_INT, 'is the module visible', VALUE_OPTIONAL),
                                     'uservisible' => new external_value(PARAM_BOOL, 'Is the module visible for the user?',
@@ -618,7 +616,6 @@ class core_course_external extends external_api {
                     $courseinfo['customfields'][] = [
                         'type' => $data->get_type(),
                         'value' => $data->get_value(),
-                        'valueraw' => $data->get_data_controller()->get_value(),
                         'name' => $data->get_name(),
                         'shortname' => $data->get_shortname()
                     ];
@@ -743,7 +740,6 @@ class core_course_external extends external_api {
                                      'shortname' => new external_value(PARAM_ALPHANUMEXT, 'The shortname of the custom field'),
                                      'type'  => new external_value(PARAM_COMPONENT,
                                          'The type of the custom field - text, checkbox...'),
-                                     'valueraw' => new external_value(PARAM_RAW, 'The raw value of the custom field'),
                                      'value' => new external_value(PARAM_RAW, 'The value of the custom field')]
                                 ), 'Custom fields and associated values', VALUE_OPTIONAL),
                         ), 'course'
@@ -2498,7 +2494,6 @@ class core_course_external extends external_api {
                 $coursereturns['customfields'][] = [
                     'type' => $data->get_type(),
                     'value' => $data->get_value(),
-                    'valueraw' => $data->get_data_controller()->get_value(),
                     'name' => $data->get_name(),
                     'shortname' => $data->get_shortname()
                 ];
@@ -2650,7 +2645,6 @@ class core_course_external extends external_api {
                             'The shortname of the custom field - to be able to build the field class in the code'),
                         'type'  => new external_value(PARAM_ALPHANUMEXT,
                             'The type of the custom field - text field, checkbox...'),
-                        'valueraw' => new external_value(PARAM_RAW, 'The raw value of the custom field'),
                         'value' => new external_value(PARAM_RAW, 'The value of the custom field'),
                     )
                 ), 'Custom fields', VALUE_OPTIONAL),
@@ -4165,266 +4159,5 @@ class core_course_external extends external_api {
                         VALUE_OPTIONAL),
         );
         return new external_single_structure($userfields);
-    }
-
-    /**
-     * Returns description of method parameters.
-     *
-     * @return external_function_parameters
-     */
-    public static function add_content_item_to_user_favourites_parameters() {
-        return new external_function_parameters([
-            'componentname' => new external_value(PARAM_TEXT,
-                'frankenstyle name of the component to which the content item belongs', VALUE_REQUIRED),
-            'contentitemid' => new external_value(PARAM_INT, 'id of the content item', VALUE_REQUIRED, '', NULL_NOT_ALLOWED)
-        ]);
-    }
-
-    /**
-     * Add a content item to a user's favourites.
-     *
-     * @param string $componentname the name of the component from which this content item originates.
-     * @param int $contentitemid the id of the content item.
-     * @return stdClass the exporter content item.
-     */
-    public static function add_content_item_to_user_favourites(string $componentname, int $contentitemid) {
-        global $USER;
-
-        [
-            'componentname' => $componentname,
-            'contentitemid' => $contentitemid,
-        ] = self::validate_parameters(self::add_content_item_to_user_favourites_parameters(),
-            [
-                'componentname' => $componentname,
-                'contentitemid' => $contentitemid,
-            ]
-        );
-
-        self::validate_context(context_user::instance($USER->id));
-
-        $contentitemservice = \core_course\local\factory\content_item_service_factory::get_content_item_service();
-
-        return $contentitemservice->add_to_user_favourites($USER, $componentname, $contentitemid);
-    }
-
-    /**
-     * Returns description of method result value.
-     *
-     * @return external_description
-     */
-    public static function add_content_item_to_user_favourites_returns() {
-        return \core_course\local\exporters\course_content_item_exporter::get_read_structure();
-    }
-
-    /**
-     * Returns description of method parameters.
-     *
-     * @return external_function_parameters
-     */
-    public static function remove_content_item_from_user_favourites_parameters() {
-        return new external_function_parameters([
-            'componentname' => new external_value(PARAM_TEXT,
-                'frankenstyle name of the component to which the content item belongs', VALUE_REQUIRED),
-            'contentitemid' => new external_value(PARAM_INT, 'id of the content item', VALUE_REQUIRED, '', NULL_NOT_ALLOWED),
-        ]);
-    }
-
-    /**
-     * Remove a content item from a user's favourites.
-     *
-     * @param string $componentname the name of the component from which this content item originates.
-     * @param int $contentitemid the id of the content item.
-     * @return stdClass the exported content item.
-     */
-    public static function remove_content_item_from_user_favourites(string $componentname, int $contentitemid) {
-        global $USER;
-
-        [
-            'componentname' => $componentname,
-            'contentitemid' => $contentitemid,
-        ] = self::validate_parameters(self::remove_content_item_from_user_favourites_parameters(),
-            [
-                'componentname' => $componentname,
-                'contentitemid' => $contentitemid,
-            ]
-        );
-
-        self::validate_context(context_user::instance($USER->id));
-
-        $contentitemservice = \core_course\local\factory\content_item_service_factory::get_content_item_service();
-
-        return $contentitemservice->remove_from_user_favourites($USER, $componentname, $contentitemid);
-    }
-
-    /**
-     * Returns description of method result value.
-     *
-     * @return external_description
-     */
-    public static function remove_content_item_from_user_favourites_returns() {
-        return \core_course\local\exporters\course_content_item_exporter::get_read_structure();
-    }
-
-    /**
-     * Returns description of method result value
-     *
-     * @return external_description
-     */
-    public static function get_course_content_items_returns() {
-        return new external_single_structure([
-            'content_items' => new external_multiple_structure(
-                \core_course\local\exporters\course_content_item_exporter::get_read_structure()
-            ),
-        ]);
-    }
-
-    /**
-     * Returns description of method parameters
-     *
-     * @return external_function_parameters
-     */
-    public static function get_course_content_items_parameters() {
-        return new external_function_parameters([
-            'courseid' => new external_value(PARAM_INT, 'ID of the course', VALUE_REQUIRED),
-        ]);
-    }
-
-    /**
-     * Given a course ID fetch all accessible modules for that course
-     *
-     * @param int $courseid The course we want to fetch the modules for
-     * @return array Contains array of modules and their metadata
-     */
-    public static function get_course_content_items(int $courseid) {
-        global $USER;
-
-        [
-            'courseid' => $courseid,
-        ] = self::validate_parameters(self::get_course_content_items_parameters(), [
-            'courseid' => $courseid,
-        ]);
-
-        $coursecontext = context_course::instance($courseid);
-        self::validate_context($coursecontext);
-        $course = get_course($courseid);
-
-        $contentitemservice = \core_course\local\factory\content_item_service_factory::get_content_item_service();
-
-        $contentitems = $contentitemservice->get_content_items_for_user_in_course($USER, $course);
-        return ['content_items' => $contentitems];
-    }
-
-    /**
-     * Returns description of method parameters.
-     *
-     * @return external_function_parameters
-     */
-    public static function toggle_activity_recommendation_parameters() {
-        return new external_function_parameters([
-            'area' => new external_value(PARAM_TEXT, 'The favourite area (itemtype)', VALUE_REQUIRED),
-            'id' => new external_value(PARAM_INT, 'id of the activity or whatever', VALUE_REQUIRED),
-        ]);
-    }
-
-    /**
-     * Update the recommendation for an activity item.
-     *
-     * @param  string $area identifier for this activity.
-     * @param  int $id Associated id. This is needed in conjunction with the area to find the recommendation.
-     * @return array some warnings or something.
-     */
-    public static function toggle_activity_recommendation(string $area, int $id): array {
-        ['area' => $area, 'id' => $id] = self::validate_parameters(self::toggle_activity_recommendation_parameters(),
-                ['area' => $area, 'id' => $id]);
-
-        $context = context_system::instance();
-        self::validate_context($context);
-
-        require_capability('moodle/course:recommendactivity', $context);
-
-        $manager = \core_course\local\factory\content_item_service_factory::get_content_item_service();
-
-        $status = $manager->toggle_recommendation($area, $id);
-        return ['id' => $id, 'area' => $area, 'status' => $status];
-    }
-
-    /**
-     * Returns warnings.
-     *
-     * @return external_description
-     */
-    public static function toggle_activity_recommendation_returns() {
-        return new external_single_structure(
-            [
-                'id' => new external_value(PARAM_INT, 'id of the activity or whatever'),
-                'area' => new external_value(PARAM_TEXT, 'The favourite area (itemtype)'),
-                'status' => new external_value(PARAM_BOOL, 'If created or deleted'),
-            ]
-        );
-    }
-
-    /**
-     * Returns description of method parameters
-     *
-     * @return external_function_parameters
-     */
-    public static function get_activity_chooser_footer_parameters() {
-        return new external_function_parameters([
-            'courseid' => new external_value(PARAM_INT, 'ID of the course', VALUE_REQUIRED),
-            'sectionid' => new external_value(PARAM_INT, 'ID of the section', VALUE_REQUIRED),
-        ]);
-    }
-
-    /**
-     * Given a course ID we need to build up a footre for the chooser.
-     *
-     * @param int $courseid The course we want to fetch the modules for
-     * @param int $sectionid The section we want to fetch the modules for
-     * @return array
-     */
-    public static function get_activity_chooser_footer(int $courseid, int $sectionid) {
-        [
-            'courseid' => $courseid,
-            'sectionid' => $sectionid,
-        ] = self::validate_parameters(self::get_activity_chooser_footer_parameters(), [
-            'courseid' => $courseid,
-            'sectionid' => $sectionid,
-        ]);
-
-        $coursecontext = context_course::instance($courseid);
-        self::validate_context($coursecontext);
-
-        $activeplugin = get_config('core', 'activitychooseractivefooter');
-
-        if ($activeplugin !== COURSE_CHOOSER_FOOTER_NONE) {
-            $footerdata = component_callback($activeplugin, 'custom_chooser_footer', [$courseid, $sectionid]);
-            return [
-                'footer' => true,
-                'customfooterjs' => $footerdata->get_footer_js_file(),
-                'customfootertemplate' => $footerdata->get_footer_template(),
-                'customcarouseltemplate' => $footerdata->get_carousel_template(),
-            ];
-        } else {
-            return [
-                'footer' => false,
-            ];
-        }
-    }
-
-    /**
-     * Returns description of method result value
-     *
-     * @return external_description
-     */
-    public static function get_activity_chooser_footer_returns() {
-        return new external_single_structure(
-            [
-                'footer' => new external_value(PARAM_BOOL, 'Is a footer being return by this request?', VALUE_REQUIRED),
-                'customfooterjs' => new external_value(PARAM_RAW, 'The path to the plugin JS file', VALUE_OPTIONAL),
-                'customfootertemplate' => new external_value(PARAM_RAW, 'The prerendered footer', VALUE_OPTIONAL),
-                'customcarouseltemplate' => new external_value(PARAM_RAW, 'Either "" or the prerendered carousel page',
-                    VALUE_OPTIONAL),
-            ]
-        );
     }
 }

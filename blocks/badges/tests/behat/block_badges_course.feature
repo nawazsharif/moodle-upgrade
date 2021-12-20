@@ -21,6 +21,7 @@ Feature: Enable Block Badges in a course
     And I set the following fields to these values:
       | id_name | Badge 1 |
       | id_description | Badge 1 |
+      | id_issuername | Teacher 1 |
     And I upload "blocks/badges/tests/fixtures/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I select "Manual issue by role" from the "Add badge criteria" singleselect
@@ -38,6 +39,7 @@ Feature: Enable Block Badges in a course
     And I set the following fields to these values:
       | id_name | Badge 2 |
       | id_description | Badge 2 |
+      | id_issuername | Teacher 1 |
     And I upload "blocks/badges/tests/fixtures/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I select "Manual issue by role" from the "Add badge criteria" singleselect

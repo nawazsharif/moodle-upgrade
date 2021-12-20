@@ -24,11 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-<<<<<<< HEAD
 $plugin->version   = 2019111801;        // The current plugin version (Date: YYYYMMDDXX)
 $plugin->requires  = 2019111200;        // Requires this Moodle version
-=======
-$plugin->version   = 2020110901;        // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires  = 2020110300;        // Requires this Moodle version
->>>>>>> remotes/origin/MOODLE_310_STABLE
 $plugin->component = 'block_online_users'; // Full name of the plugin (used for diagnostics)

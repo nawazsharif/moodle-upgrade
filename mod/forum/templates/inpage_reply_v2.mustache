@@ -82,12 +82,12 @@
                     </button>
                     {{#canreplyprivately}}
                     <div class="form-check form-check-inline">
-                        <div class="custom-control custom-switch">
-                            <input name="privatereply" type="checkbox" class="custom-control-input" id="private-reply-checkbox-{{uniqid}}">
-                            <label class="custom-control-label" for="private-reply-checkbox-{{uniqid}}">
+                        <span class="switch">
+                            <input name="privatereply" type="checkbox" id="private-reply-checkbox-{{uniqid}}">
+                            <label class="mb-0" for="private-reply-checkbox-{{uniqid}}">
                                 {{#str}} privatereply, forum {{/str}}
                             </label>
-                        </div>
+                        </span>
                     </div>
                     {{/canreplyprivately}}
                     <button

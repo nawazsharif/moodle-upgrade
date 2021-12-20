@@ -189,12 +189,7 @@ class cohort_role_assignments_table extends table_sql {
                    FROM {tool_cohortroles} uca
                    JOIN {user} u ON u.id = uca.userid
                    JOIN {cohort} c ON c.id = uca.cohortid";
-
-        // Check if any additional filtering is required.
-        [$sqlwhere, $params] = $this->get_sql_where();
-        if ($sqlwhere) {
-            $sql .= " WHERE {$sqlwhere}";
-        }
+        $params = array();
 
         // Add order by if needed.
         if (!$count && $sqlsort = $this->get_sql_sort()) {

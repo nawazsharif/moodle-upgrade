@@ -638,11 +638,8 @@ abstract class handler {
      *
      * @param \MoodleQuickForm $mform
      * @param int $instanceid id of the instance, can be null when instance is being created
-     * @param string $headerlangidentifier If specified, a lang string will be used for field category headings
-     * @param string $headerlangcomponent
      */
-    public function instance_form_definition(\MoodleQuickForm $mform, int $instanceid = 0,
-            ?string $headerlangidentifier = null, ?string $headerlangcomponent = null) {
+    public function instance_form_definition(\MoodleQuickForm $mform, int $instanceid = 0) {
 
         $editablefields = $this->get_editable_fields($instanceid);
         $fieldswithdata = api::get_instance_fields_data($editablefields, $instanceid);
@@ -650,14 +647,8 @@ abstract class handler {
         foreach ($fieldswithdata as $data) {
             $categoryid = $data->get_field()->get_category()->get('id');
             if ($categoryid != $lastcategoryid) {
-                $categoryname = format_string($data->get_field()->get_category()->get('name'));
-
-                // Load category header lang string if specified.
-                if (!empty($headerlangidentifier)) {
-                    $categoryname = get_string($headerlangidentifier, $headerlangcomponent, $categoryname);
-                }
-
-                $mform->addElement('header', 'category_' . $categoryid, $categoryname);
+                $mform->addElement('header', 'category_' . $categoryid,
+                    format_string($data->get_field()->get_category()->get('name')));
                 $lastcategoryid = $categoryid;
             }
             $data->instance_form_definition($mform);

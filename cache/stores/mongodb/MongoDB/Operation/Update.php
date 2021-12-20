@@ -17,20 +17,14 @@
 
 namespace MongoDB\Operation;
 
+use MongoDB\UpdateResult;
 use MongoDB\Driver\BulkWrite as Bulk;
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
-use MongoDB\UpdateResult;
-use function is_array;
-use function is_bool;
-use function is_object;
-use function MongoDB\is_first_key_operator;
-use function MongoDB\is_pipeline;
-use function MongoDB\server_supports_feature;
 
 /**
  * Operation for the update command.
@@ -43,28 +37,14 @@ use function MongoDB\server_supports_feature;
  */
 class Update implements Executable, Explainable
 {
-    /** @var integer */
     private static $wireVersionForArrayFilters = 6;
-
-    /** @var integer */
     private static $wireVersionForCollation = 5;
-
-    /** @var integer */
     private static $wireVersionForDocumentLevelValidation = 4;
 
-    /** @var string */
     private $databaseName;
-
-    /** @var string */
     private $collectionName;
-
-    /** @var array|object */
     private $filter;
-
-    /** @var array|object */
     private $update;
-
-    /** @var array */
     private $options;
 
     /**
@@ -112,11 +92,11 @@ class Update implements Executable, Explainable
      */
     public function __construct($databaseName, $collectionName, $filter, $update, array $options = [])
     {
-        if (! is_array($filter) && ! is_object($filter)) {
+        if ( ! is_array($filter) && ! is_object($filter)) {
             throw InvalidArgumentException::invalidType('$filter', $filter, 'array or object');
         }
 
-        if (! is_array($update) && ! is_object($update)) {
+        if ( ! is_array($update) && ! is_object($update)) {
             throw InvalidArgumentException::invalidType('$update', $filter, 'array or object');
         }
 
@@ -137,24 +117,24 @@ class Update implements Executable, Explainable
             throw InvalidArgumentException::invalidType('"collation" option', $options['collation'], 'array or object');
         }
 
-        if (! is_bool($options['multi'])) {
+        if ( ! is_bool($options['multi'])) {
             throw InvalidArgumentException::invalidType('"multi" option', $options['multi'], 'boolean');
         }
 
-        if ($options['multi'] && ! is_first_key_operator($update) && ! is_pipeline($update)) {
+        if ($options['multi'] && ! \MongoDB\is_first_key_operator($update)) {
             throw new InvalidArgumentException('"multi" option cannot be true if $update is a replacement document');
         }
 
         if (isset($options['session']) && ! $options['session'] instanceof Session) {
-            throw InvalidArgumentException::invalidType('"session" option', $options['session'], Session::class);
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
         }
 
-        if (! is_bool($options['upsert'])) {
+        if ( ! is_bool($options['upsert'])) {
             throw InvalidArgumentException::invalidType('"upsert" option', $options['upsert'], 'boolean');
         }
 
         if (isset($options['writeConcern']) && ! $options['writeConcern'] instanceof WriteConcern) {
-            throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], WriteConcern::class);
+            throw InvalidArgumentException::invalidType('"writeConcern" option', $options['writeConcern'], 'MongoDB\Driver\WriteConcern');
         }
 
         if (isset($options['writeConcern']) && $options['writeConcern']->isDefault()) {
@@ -179,24 +159,17 @@ class Update implements Executable, Explainable
      */
     public function execute(Server $server)
     {
-        if (isset($this->options['arrayFilters']) && ! server_supports_feature($server, self::$wireVersionForArrayFilters)) {
+        if (isset($this->options['arrayFilters']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForArrayFilters)) {
             throw UnsupportedException::arrayFiltersNotSupported();
         }
 
-        if (isset($this->options['collation']) && ! server_supports_feature($server, self::$wireVersionForCollation)) {
+        if (isset($this->options['collation']) && ! \MongoDB\server_supports_feature($server, self::$wireVersionForCollation)) {
             throw UnsupportedException::collationNotSupported();
-        }
-
-        $inTransaction = isset($this->options['session']) && $this->options['session']->isInTransaction();
-        if ($inTransaction && isset($this->options['writeConcern'])) {
-            throw UnsupportedException::writeConcernNotSupportedInTransaction();
         }
 
         $bulkOptions = [];
 
-        if (! empty($this->options['bypassDocumentValidation']) &&
-            server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)
-        ) {
+        if (isset($this->options['bypassDocumentValidation']) && \MongoDB\server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)) {
             $bulkOptions['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];
         }
 
@@ -216,9 +189,7 @@ class Update implements Executable, Explainable
             $cmd['writeConcern'] = $this->options['writeConcern'];
         }
 
-        if (! empty($this->options['bypassDocumentValidation']) &&
-            server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)
-        ) {
+        if (isset($this->options['bypassDocumentValidation']) && \MongoDB\server_supports_feature($server, self::$wireVersionForDocumentLevelValidation)) {
             $cmd['bypassDocumentValidation'] = $this->options['bypassDocumentValidation'];
         }
 

@@ -785,12 +785,11 @@ function groups_get_possible_roles($context) {
  * @param string $orderby The column to sort users by
  * @param int $notingroup restrict to users not in existing groups
  * @param bool $onlyactiveenrolments restrict to users who have an active enrolment in the course
- * @param array $extrafields Extra user fields to return
  * @return array An array of the users
  */
 function groups_get_potential_members($courseid, $roleid = null, $source = null,
                                       $orderby = 'lastname ASC, firstname ASC',
-                                      $notingroup = null, $onlyactiveenrolments = false, $extrafields = []) {
+                                      $notingroup = null, $onlyactiveenrolments = false) {
     global $DB;
 
     $context = context_course::instance($courseid);
@@ -848,7 +847,7 @@ function groups_get_potential_members($courseid, $roleid = null, $source = null,
         }
     }
 
-    $allusernamefields = user_picture::fields('u', $extrafields);
+    $allusernamefields = get_all_user_name_fields(true, 'u');
     $sql = "SELECT DISTINCT u.id, u.username, $allusernamefields, u.idnumber
               FROM {user} u
               JOIN ($esql) e ON e.id = u.id

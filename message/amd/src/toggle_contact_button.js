@@ -17,6 +17,8 @@
  * Module to add/remove contact using ajax.
  *
  * @module     core_message/toggle_contact_button
+ * @class      toggle_contact_button
+ * @package    message
  * @copyright  2016 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -63,17 +65,6 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/cust
      */
     var getUserId = function(element) {
         return element.attr('data-userid');
-    };
-
-    /**
-     * Get the id for the logged in user.
-     *
-     * @method getUserId
-     * @param {object} element jQuery object for the button
-     * @return {int}
-     */
-    var getCurrentUserId = function(element) {
-        return element.attr('data-currentuserid');
     };
 
     /**
@@ -126,10 +117,9 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/cust
         }
 
         var request = {
-            methodname: 'core_message_create_contact_request',
+            methodname: 'core_message_create_contacts',
             args: {
-                userid: getCurrentUserId(element),
-                requesteduserid: getUserId(element),
+                userids: [getUserId(element)],
             }
         };
         sendRequest(element, request).done(function() {
@@ -172,7 +162,6 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/cust
      * Enhances the given element with a loading gif and event handles to make
      * ajax requests to add or remove a contact where appropriate.
      *
-     * @public
      * @method enhance
      * @param {object} element jQuery object for the button
      */
@@ -199,7 +188,7 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/cust
         });
     };
 
-    return {
+    return /** @alias module:message/toggle_contact_button */ {
         enhance: enhance
     };
 });

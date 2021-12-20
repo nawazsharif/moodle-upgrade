@@ -39,19 +39,12 @@ Feature: Clear my answers
 
   @javascript
   Scenario: Attempt a quiz and reset my chosen answer.
-<<<<<<< HEAD
     When I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Quiz 1"
     And I press "Attempt quiz now"
     And I should see "Question One"
     And I click on "Four" "radio" in the "Question One" "question"
-=======
-    Given I am on the "Quiz 1" "quiz activity" page logged in as student1
-    When I press "Attempt quiz now"
-    And I should see "Question One"
-    And I click on "Four" "qtype_multichoice > Answer" in the "Question One" "question"
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I should see "Clear my choice"
     And I click on "Clear my choice" "button" in the "Question One" "question"
     Then I should not see "Clear my choice"
@@ -60,19 +53,12 @@ Feature: Clear my answers
 
   @javascript
   Scenario: Attempt a quiz and revisit a cleared answer.
-<<<<<<< HEAD
     When I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Quiz 1"
     And I press "Attempt quiz now"
     And I should see "Question One"
     And I click on "Four" "radio" in the "Question One" "question"
-=======
-    Given I am on the "Quiz 1" "quiz activity" page logged in as student1
-    When I press "Attempt quiz now"
-    And I should see "Question One"
-    And I click on "Four" "qtype_multichoice > Answer" in the "Question One" "question"
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I follow "Finish attempt ..."
     And I click on "Return to attempt" "button"
     And I click on "Clear my choice" "button" in the "Question One" "question"

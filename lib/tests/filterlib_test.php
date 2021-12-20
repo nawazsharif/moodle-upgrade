@@ -91,12 +91,11 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_only_one_filter_globally('name', TEXTFILTER_DISABLED);
     }
 
+    /**
+     * @expectedException coding_exception
+     */
     public function test_global_config_exception_on_invalid_state() {
         $this->resetAfterTest();
-<<<<<<< HEAD
-=======
-        $this->expectException(coding_exception::class);
->>>>>>> remotes/origin/MOODLE_310_STABLE
         filter_set_global_state('name', 0);
     }
 
@@ -249,17 +248,21 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assert_no_local_setting();
     }
 
+    /**
+     * @expectedException coding_exception
+     */
     public function test_local_invalid_state_throws_exception() {
         $this->resetAfterTest();
         // Exercise SUT.
-        $this->expectException(coding_exception::class);
         filter_set_local_state('name', 123, -9999);
     }
 
+    /**
+     * @expectedException coding_exception
+     */
     public function test_throws_exception_when_setting_global() {
         $this->resetAfterTest();
         // Exercise SUT.
-        $this->expectException(coding_exception::class);
         filter_set_local_state('name', context_system::instance()->id, TEXTFILTER_INHERIT);
     }
 
@@ -342,11 +345,7 @@ class core_filterlib_testcase extends advanced_testcase {
     }
 
     private function assert_filter_list($expectedfilters, $filters) {
-<<<<<<< HEAD
         $this->assertEquals($expectedfilters, array_keys($filters), '', 0, 10, true);
-=======
-        $this->assertEqualsCanonicalizing($expectedfilters, array_keys($filters));
->>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     public function test_globally_on_is_returned() {
@@ -544,16 +543,15 @@ class core_filterlib_testcase extends advanced_testcase {
         $this->assertEquals(array(), $filters);
     }
 
+    /**
+     * @expectedException coding_exception
+     */
     public function test_available_in_context_exception_with_syscontext() {
         $this->resetAfterTest();
         [
             'syscontext' => $syscontext
         ] = $this->setup_available_in_context_tests();
         // Exercise SUT.
-<<<<<<< HEAD
-=======
-        $this->expectException(coding_exception::class);
->>>>>>> remotes/origin/MOODLE_310_STABLE
         filter_get_available_in_context($syscontext);
     }
 
@@ -782,61 +780,6 @@ class core_filterlib_testcase extends advanced_testcase {
         $filterman = filter_manager::instance();
         $this->assertInstanceOf('filter_manager', $filterman);
         $this->assertInstanceOf('performance_measuring_filter_manager', $filterman);
-    }
-
-    public function test_filter_get_active_state_contextid_parameter() {
-        $this->resetAfterTest();
-
-        filter_set_global_state('glossary', TEXTFILTER_ON);
-        // Using system context by default.
-        $active = filter_get_active_state('glossary');
-        $this->assertEquals($active, TEXTFILTER_ON);
-
-        $systemcontext = context_system::instance();
-        // Passing $systemcontext object.
-        $active = filter_get_active_state('glossary', $systemcontext);
-        $this->assertEquals($active, TEXTFILTER_ON);
-
-        // Passing $systemcontext id.
-        $active = filter_get_active_state('glossary', $systemcontext->id);
-        $this->assertEquals($active, TEXTFILTER_ON);
-
-        // Not system context.
-        filter_set_local_state('glossary', '123', TEXTFILTER_ON);
-        $active = filter_get_active_state('glossary', '123');
-        $this->assertEquals($active, TEXTFILTER_ON);
-    }
-
-    public function test_filter_get_active_state_filtername_parameter() {
-        $this->resetAfterTest();
-
-        filter_set_global_state('glossary', TEXTFILTER_ON);
-        // Using full filtername.
-        $active = filter_get_active_state('filter/glossary');
-        $this->assertEquals($active, TEXTFILTER_ON);
-
-        // Wrong filtername.
-        $this->expectException('coding_exception');
-        $active = filter_get_active_state('mod/glossary');
-    }
-
-    public function test_filter_get_active_state_after_change() {
-        $this->resetAfterTest();
-
-        filter_set_global_state('glossary', TEXTFILTER_ON);
-        $systemcontextid = context_system::instance()->id;
-        $active = filter_get_active_state('glossary', $systemcontextid);
-        $this->assertEquals($active, TEXTFILTER_ON);
-
-        filter_set_global_state('glossary', TEXTFILTER_OFF);
-        $systemcontextid = context_system::instance()->id;
-        $active = filter_get_active_state('glossary', $systemcontextid);
-        $this->assertEquals($active, TEXTFILTER_OFF);
-
-        filter_set_global_state('glossary', TEXTFILTER_DISABLED);
-        $systemcontextid = context_system::instance()->id;
-        $active = filter_get_active_state('glossary', $systemcontextid);
-        $this->assertEquals($active, TEXTFILTER_DISABLED);
     }
 
     public function test_filter_get_globally_enabled_default() {

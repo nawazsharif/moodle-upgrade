@@ -26,12 +26,7 @@ namespace core_h5p;
 
 defined('MOODLE_INTERNAL') || die();
 
-<<<<<<< HEAD
 use core\lock\lock_config;
-=======
-use core_h5p\local\library\autoloader;
-use core_xapi\local\statement\item_activity;
->>>>>>> remotes/origin/MOODLE_310_STABLE
 
 /**
  * H5P player class, for displaying any local H5P content.
@@ -73,11 +68,6 @@ class player {
     private $content;
 
     /**
-     * @var string optional component name to send xAPI statements.
-     */
-    private $component;
-
-    /**
      * @var string Type of embed object, div or iframe.
      */
     private $embedtype;
@@ -108,9 +98,8 @@ class player {
      * @param string $url Local URL of the H5P file to display.
      * @param stdClass $config Configuration for H5P buttons.
      * @param bool $preventredirect Set to true in scripts that can not redirect (CLI, RSS feeds, etc.), throws exceptions
-     * @param string $component optional moodle component to sent xAPI tracking
      */
-    public function __construct(string $url, \stdClass $config, bool $preventredirect = true, string $component = '') {
+    public function __construct(string $url, \stdClass $config, bool $preventredirect = true) {
         if (empty($url)) {
             throw new \moodle_exception('h5pinvalidurl', 'core_h5p');
         }
@@ -121,64 +110,17 @@ class player {
 
         $this->messages = new \stdClass();
 
-        $this->component = $component;
-
         // Create \core_h5p\core instance.
         $this->core = $this->factory->get_core();
 
         // Get the H5P identifier linked to this URL.
-        list($file, $this->h5pid) = api::create_content_from_pluginfile_url(
-            $url,
-            $config,
-            $this->factory,
-            $this->messages,
-            $this->preventredirect
-        );
-        if ($file) {
-            $this->context = \context::instance_by_id($file->get_contextid());
-            if ($this->h5pid) {
-                // Load the content of the H5P content associated to this $url.
-                $this->content = $this->core->loadContent($this->h5pid);
+        if ($this->h5pid = $this->get_h5p_id($url, $config)) {
+            // Load the content of the H5P content associated to this $url.
+            $this->content = $this->core->loadContent($this->h5pid);
 
-                // Get the embedtype to use for displaying the H5P content.
-                $this->embedtype = core::determineEmbedType($this->content['embedType'], $this->content['library']['embedTypes']);
-            }
+            // Get the embedtype to use for displaying the H5P content.
+            $this->embedtype = core::determineEmbedType($this->content['embedType'], $this->content['library']['embedTypes']);
         }
-    }
-
-    /**
-     * Get the encoded URL for embeding this H5P content.
-     *
-     * @param string $url Local URL of the H5P file to display.
-     * @param stdClass $config Configuration for H5P buttons.
-     * @param bool $preventredirect Set to true in scripts that can not redirect (CLI, RSS feeds, etc.), throws exceptions
-     * @param string $component optional moodle component to sent xAPI tracking
-     *
-     * @return string The embedable code to display a H5P file.
-     */
-    public static function display(string $url, \stdClass $config, bool $preventredirect = true,
-            string $component = ''): string {
-        global $OUTPUT;
-        $params = [
-                'url' => $url,
-                'preventredirect' => $preventredirect,
-                'component' => $component,
-            ];
-
-        $optparams = ['frame', 'export', 'embed', 'copyright'];
-        foreach ($optparams as $optparam) {
-            if (!empty($config->$optparam)) {
-                $params[$optparam] = $config->$optparam;
-            }
-        }
-        $fileurl = new \moodle_url('/h5p/embed.php', $params);
-
-        $template = new \stdClass();
-        $template->embedurl = $fileurl->out(false);
-
-        $result = $OUTPUT->render_from_template('core_h5p/h5pembed', $template);
-        $result .= self::get_resize_code();
-        return $result;
     }
 
     /**
@@ -187,7 +129,20 @@ class player {
      * @return stdClass with framework error messages.
      */
     public function get_messages(): \stdClass {
-        return helper::get_messages($this->messages, $this->factory);
+        // Check if there are some errors and store them in $messages.
+        if (empty($this->messages->error)) {
+            $this->messages->error = $this->core->h5pF->getMessages('error') ?: false;
+        } else {
+            $this->messages->error = array_merge($this->messages->error, $this->core->h5pF->getMessages('error'));
+        }
+
+        if (empty($this->messages->info)) {
+            $this->messages->info = $this->core->h5pF->getMessages('info') ?: false;
+        } else {
+            $this->messages->info = array_merge($this->messages->info, $this->core->h5pF->getMessages('info'));
+        }
+
+        return $this->messages;
     }
 
     /**
@@ -206,17 +161,16 @@ class player {
         $contenturl = \moodle_url::make_pluginfile_url($systemcontext->id, \core_h5p\file_storage::COMPONENT,
             \core_h5p\file_storage::CONTENT_FILEAREA, $this->h5pid, null, null);
         $exporturl = $this->get_export_settings($displayoptions[ core::DISPLAY_OPTION_DOWNLOAD ]);
-        $xapiobject = item_activity::create_from_id($this->context->id);
         $contentsettings = [
             'library'         => core::libraryToString($this->content['library']),
             'fullScreen'      => $this->content['library']['fullscreen'],
             'exportUrl'       => ($exporturl instanceof \moodle_url) ? $exporturl->out(false) : '',
             'embedCode'       => $this->get_embed_code($this->url->out(),
                 $displayoptions[ core::DISPLAY_OPTION_EMBED ]),
-            'resizeCode'      => self::get_resize_code(),
+            'resizeCode'      => $this->get_resize_code(),
             'title'           => $this->content['slug'],
             'displayOptions'  => $displayoptions,
-            'url'             => $xapiobject->get_data()->id,
+            'url'             => self::get_embed_url($this->url->out())->out(),
             'contentUrl'      => $contenturl->out(),
             'metadata'        => $this->content['metadata'],
             'contentUserData' => [0 => ['state' => '{}']]
@@ -224,6 +178,14 @@ class player {
         // Get the core H5P assets, needed by the H5P classes to render the H5P content.
         $settings = $this->get_assets();
         $settings['contents'][$cid] = array_merge($settings['contents'][$cid], $contentsettings);
+
+        foreach ($this->jsrequires as $script) {
+            $PAGE->requires->js($script, true);
+        }
+
+        foreach ($this->cssrequires as $css) {
+            $PAGE->requires->css($css);
+        }
 
         // Print JavaScript settings to page.
         $PAGE->requires->data_for_js('H5PIntegration', $settings, true);
@@ -249,7 +211,7 @@ class player {
         \core_h5p\event\h5p_viewed::create([
             'objectid' => $this->h5pid,
             'userid' => $USER->id,
-            'context' => $this->get_context(),
+            'context' => $this->context,
             'other' => [
                 'url' => $this->url->out(),
                 'time' => time()
@@ -278,7 +240,6 @@ class player {
     }
 
     /**
-<<<<<<< HEAD
      * Get the H5P DB instance id for a H5P pluginfile URL. The H5P file will be saved if it doesn't exist previously or
      * if its content has changed. Besides, the displayoptions in the $config will be also updated when they have changed and
      * the user has the right permissions.
@@ -548,8 +509,6 @@ class player {
     }
 
     /**
-=======
->>>>>>> remotes/origin/MOODLE_310_STABLE
      * Delete an H5P package.
      *
      * @param stdClass $content The H5P package to delete.
@@ -571,42 +530,34 @@ class player {
      */
     private function get_export_settings(bool $downloadenabled): ?\moodle_url {
 
-        if (!$downloadenabled) {
+        if ( ! $downloadenabled) {
             return null;
         }
 
         $systemcontext = \context_system::instance();
         $slug = $this->content['slug'] ? $this->content['slug'] . '-' : '';
-        // We have to build the right URL.
-        // Depending the request was made through webservice/pluginfile.php or pluginfile.php.
-        if (strpos($this->url, '/webservice/pluginfile.php')) {
-            $url  = \moodle_url::make_webservice_pluginfile_url(
-                $systemcontext->id,
-                \core_h5p\file_storage::COMPONENT,
-                \core_h5p\file_storage::EXPORT_FILEAREA,
-                '',
-                '',
-                "{$slug}{$this->content['id']}.h5p"
-            );
-        } else {
-            // If the request is made by tokenpluginfile.php we need to indicates to generate a token for current user.
-            $includetoken = false;
-            if (strpos($this->url, '/tokenpluginfile.php')) {
-                $includetoken = true;
-            }
-            $url  = \moodle_url::make_pluginfile_url(
-                $systemcontext->id,
-                \core_h5p\file_storage::COMPONENT,
-                \core_h5p\file_storage::EXPORT_FILEAREA,
-                '',
-                '',
-                "{$slug}{$this->content['id']}.h5p",
-                false,
-                $includetoken
-            );
-        }
+        $url  = \moodle_url::make_pluginfile_url(
+            $systemcontext->id,
+            \core_h5p\file_storage::COMPONENT,
+            \core_h5p\file_storage::EXPORT_FILEAREA,
+            '',
+            '',
+            "{$slug}{$this->content['id']}.h5p"
+        );
 
         return $url;
+    }
+
+    /**
+     * Get a query string with the theme revision number to include at the end
+     * of URLs. This is used to force the browser to reload the asset when the
+     * theme caches are cleared.
+     *
+     * @return string
+     */
+    private function get_cache_buster(): string {
+        global $CFG;
+        return '?ver=' . $CFG->themerev;
     }
 
     /**
@@ -624,20 +575,39 @@ class player {
      * @return Array core H5P assets.
      */
     private function get_assets(): array {
-        // Get core assets.
-        $settings = helper::get_core_assets();
-        // Added here because in the helper we don't have the h5p content id.
-        $settings['moodleLibraryPaths'] = $this->core->get_dependency_roots($this->h5pid);
-        // Add also the Moodle component where the results will be tracked.
-        $settings['moodleComponent'] = $this->component;
-        if (!empty($settings['moodleComponent'])) {
-            $settings['reportingIsEnabled'] = true;
+        global $CFG;
+
+        // Get core settings.
+        $settings = $this->get_core_settings();
+        $settings['core'] = [
+          'styles' => [],
+          'scripts' => []
+        ];
+        $settings['loadedJs'] = [];
+        $settings['loadedCss'] = [];
+
+        // Make sure files are reloaded for each plugin update.
+        $cachebuster = $this->get_cache_buster();
+
+        // Use relative URL to support both http and https.
+        $liburl = $CFG->wwwroot . '/lib/h5p/';
+        $relpath = '/' . preg_replace('/^[^:]+:\/\/[^\/]+\//', '', $liburl);
+
+        // Add core stylesheets.
+        foreach (core::$styles as $style) {
+            $settings['core']['styles'][] = $relpath . $style . $cachebuster;
+            $this->cssrequires[] = new \moodle_url($liburl . $style . $cachebuster);
+        }
+        // Add core JavaScript.
+        foreach (core::get_scripts() as $script) {
+            $settings['core']['scripts'][] = $script->out(false);
+            $this->jsrequires[] = $script;
         }
 
         $cid = $this->get_cid();
         // The filterParameters function should be called before getting the dependencyfiles because it rebuild content
         // dependency cache and export file.
-        $settings['contents'][$cid]['jsonContent'] = $this->get_filtered_parameters();
+        $settings['contents'][$cid]['jsonContent'] = $this->core->filterParameters($this->content);
 
         $files = $this->get_dependency_files();
         if ($this->embedtype === 'div') {
@@ -679,25 +649,41 @@ class player {
     }
 
     /**
-     * Get filtered parameters, modifying them by the renderer if the theme implements the h5p_alter_filtered_parameters function.
+     * Get the settings needed by the H5P library.
      *
-     * @return string Filtered parameters.
+     * @return array The settings.
      */
-    private function get_filtered_parameters(): string {
-        global $PAGE;
+    private function get_core_settings(): array {
+        global $CFG;
 
-        $safeparams = $this->core->filterParameters($this->content);
-        $decodedparams = json_decode($safeparams);
-        $h5poutput = $PAGE->get_renderer('core_h5p');
-        $h5poutput->h5p_alter_filtered_parameters(
-            $decodedparams,
-            $this->content['library']['name'],
-            $this->content['library']['majorVersion'],
-            $this->content['library']['minorVersion']
+        $basepath = $CFG->wwwroot . '/';
+        $systemcontext = \context_system::instance();
+
+        // Generate AJAX paths.
+        $ajaxpaths = [];
+        $ajaxpaths['xAPIResult'] = '';
+        $ajaxpaths['contentUserData'] = '';
+
+        $settings = array(
+            'baseUrl' => $basepath,
+            'url' => "{$basepath}pluginfile.php/{$systemcontext->instanceid}/core_h5p",
+            'urlLibraries' => "{$basepath}pluginfile.php/{$systemcontext->id}/core_h5p/libraries",
+            'postUserStatistics' => false,
+            'ajax' => $ajaxpaths,
+            'saveFreq' => false,
+            'siteUrl' => $CFG->wwwroot,
+            'l10n' => array('H5P' => $this->core->getLocalization()),
+            'user' => [],
+            'hubIsEnabled' => false,
+            'reportingIsEnabled' => false,
+            'crossorigin' => null,
+            'libraryConfig' => $this->core->h5pF->getLibraryConfig(),
+            'pluginCacheBuster' => $this->get_cache_buster(),
+            'libraryUrl' => $basepath . 'lib/h5p/js',
+            'moodleLibraryPaths' => $this->core->get_dependency_roots($this->h5pid),
         );
-        $safeparams = json_encode($decodedparams);
 
-        return $safeparams;
+        return $settings;
     }
 
     /**
@@ -706,15 +692,8 @@ class player {
      * @return array Files that the view has dependencies to
      */
     private function get_dependency_files(): array {
-        global $PAGE;
-
         $preloadeddeps = $this->core->loadContentDependencies($this->h5pid, 'preloaded');
         $files = $this->core->getDependenciesFiles($preloadeddeps);
-
-        // Add additional asset files if required.
-        $h5poutput = $PAGE->get_renderer('core_h5p');
-        $h5poutput->h5p_alter_scripts($files['scripts'], $preloadeddeps, $this->embedtype);
-        $h5poutput->h5p_alter_styles($files['styles'], $preloadeddeps, $this->embedtype);
 
         return $files;
     }
@@ -724,11 +703,11 @@ class player {
      *
      * @return string The HTML code with the resize script.
      */
-    private static function get_resize_code(): string {
+    private function get_resize_code(): string {
         global $OUTPUT;
 
         $template = new \stdClass();
-        $template->resizeurl = autoloader::get_h5p_core_library_url('js/h5p-resizer.js');
+        $template->resizeurl = new \moodle_url('/lib/h5p/js/h5p-resizer.js');
 
         return $OUTPUT->render_from_template('core_h5p/h5presize', $template);
     }
@@ -749,7 +728,7 @@ class player {
         }
 
         $template = new \stdClass();
-        $template->embedurl = self::get_embed_url($url, $this->component)->out(false);
+        $template->embedurl = self::get_embed_url($url)->out();
 
         return $OUTPUT->render_from_template('core_h5p/h5pembed', $template);
     }
@@ -757,22 +736,15 @@ class player {
     /**
      * Get the encoded URL for embeding this H5P content.
      * @param  string $url The URL of the .h5p file.
-     * @param string $component optional Moodle component to send xAPI tracking
      *
      * @return \moodle_url The embed URL.
      */
-    public static function get_embed_url(string $url, string $component = ''): \moodle_url {
-        $params = ['url' => $url];
-        if (!empty($component)) {
-            // If component is not empty, it will be passed too, in order to allow tracking too.
-            $params['component'] = $component;
-        }
-
-        return new \moodle_url('/h5p/embed.php', $params);
+    public static function get_embed_url(string $url): \moodle_url {
+        return new \moodle_url('/h5p/embed.php', ['url' => $url]);
     }
 
     /**
-     * Return the info export file for Mobile App.
+     * Return the export file for Mobile App.
      *
      * @return array
      */
@@ -783,8 +755,23 @@ class player {
         $path = $exporturl->out_as_local_url();
         $parts = explode('/', $path);
         $filename = array_pop($parts);
-        // Get the required info from the export file to be able to get the export file by third apps.
-        $file = helper::get_export_info($filename, $exporturl);
+        // Get the the export file.
+        $systemcontext = \context_system::instance();
+        $fs = get_file_storage();
+        $fileh5p = $fs->get_file($systemcontext->id,
+            \core_h5p\file_storage::COMPONENT,
+            \core_h5p\file_storage::EXPORT_FILEAREA,
+            0,
+            '/',
+            $filename);
+        // Get the options that the Mobile App needs.
+        $file = [];
+        $file['filename'] = $fileh5p->get_filename();
+        $file['filepath'] = $fileh5p->get_filepath();
+        $file['mimetype'] = $fileh5p->get_mimetype();
+        $file['filesize'] = $fileh5p->get_filesize();
+        $file['timemodified'] = $fileh5p->get_timemodified();
+        $file['fileurl'] = $exporturl->out(false);
 
         return $file;
     }

@@ -25,6 +25,7 @@ define('NO_OUTPUT_BUFFERING', true);
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
+require_once($CFG->libdir . '/dataformatlib.php');
 require_once($CFG->dirroot . '/calendar/externallib.php');
 
 $forumid = required_param('id', PARAM_INT);
@@ -120,57 +121,41 @@ if ($form->is_cancelled()) {
     $striphtml = !empty($data->striphtml);
     $humandates = !empty($data->humandates);
 
-    $fields = ['id', 'discussion', 'parent', 'userid', 'userfullname', 'created', 'modified', 'mailed', 'subject', 'message',
+    $fields = ['id', 'discussion', 'parent', 'userid', 'created', 'modified', 'mailed', 'subject', 'message',
                 'messageformat', 'messagetrust', 'attachment', 'totalscore', 'mailnow', 'deleted', 'privatereplyto',
-                'privatereplytofullname', 'wordcount', 'charcount'];
-
-    $canviewfullname = has_capability('moodle/site:viewfullnames', $context);
+                'wordcount', 'charcount'];
 
     $datamapper = $legacydatamapperfactory->get_post_data_mapper();
     $exportdata = new ArrayObject($datamapper->to_legacy_objects($posts));
     $iterator = $exportdata->getIterator();
 
+    require_once($CFG->libdir . '/dataformatlib.php');
     $filename = clean_filename('discussion');
-    \core\dataformat::download_data(
+    download_as_dataformat(
         $filename,
         $dataformat,
         $fields,
         $iterator,
-        function($exportdata) use ($fields, $striphtml, $humandates, $canviewfullname, $context) {
-            $data = new stdClass();
-
-            foreach ($fields as $field) {
-                // Set data field's value from the export data's equivalent field by default.
-                $data->$field = $exportdata->$field ?? null;
-
-                if ($field == 'userfullname') {
-                    $user = \core_user::get_user($data->userid);
-                    $data->userfullname = fullname($user, $canviewfullname);
-                }
-
-                if ($field == 'privatereplytofullname' && !empty($data->privatereplyto)) {
-                    $user = \core_user::get_user($data->privatereplyto);
-                    $data->privatereplytofullname = fullname($user, $canviewfullname);
-                }
-
-                if ($field == 'message') {
-                    $data->message = file_rewrite_pluginfile_urls($data->message, 'pluginfile.php', $context->id, 'mod_forum',
-                        'post', $data->id);
-                }
-
-                // Convert any boolean fields to their integer equivalent for output.
-                if (is_bool($data->$field)) {
-                    $data->$field = (int) $data->$field;
-                }
-            }
-
+        function($exportdata) use ($fields, $striphtml, $humandates) {
+            $data = $exportdata;
             if ($striphtml) {
+                // The following call to html_to_text uses the option that strips out
+                // all URLs, but format_text complains if it finds @@PLUGINFILE@@ tokens.
+                // So, we need to replace @@PLUGINFILE@@ with a real URL, but it doesn't
+                // matter what. We use http://example.com/.
+                $data->message = str_replace('@@PLUGINFILE@@/', 'http://example.com/', $data->message);
                 $data->message = html_to_text(format_text($data->message, $data->messageformat), 0, false);
                 $data->messageformat = FORMAT_PLAIN;
             }
             if ($humandates) {
                 $data->created = userdate($data->created);
                 $data->modified = userdate($data->modified);
+            }
+            foreach ($fields as $field) {
+                // Convert any boolean fields to their integer equivalent for output.
+                if (is_bool($data->$field)) {
+                    $data->$field = (int) $data->$field;
+                }
             }
             return $data;
         });

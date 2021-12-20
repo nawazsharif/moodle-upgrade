@@ -123,16 +123,10 @@ M.core_question_engine.questionformalreadysubmitted = false;
 /**
  * Initialise a question submit button. This saves the scroll position and
  * sets the fragment on the form submit URL so the page reloads in the right place.
- * @param button the id of the button in the HTML.
+ * @param id the id of the button in the HTML.
+ * @param slot the number of the question_attempt within the usage.
  */
-<<<<<<< HEAD
 M.core_question_engine.init_submit_button = function(Y, button, slot) {
-=======
-M.core_question_engine.init_submit_button = function(Y, button) {
-    require(['core_form/submit'], function(submit) {
-        submit.init(button);
-    });
->>>>>>> remotes/origin/MOODLE_310_STABLE
     var totalQuestionsInPage = document.querySelectorAll('div.que').length;
     var buttonel = document.getElementById(button);
     var outeruniqueid = buttonel.closest('.que').id;

@@ -110,9 +110,7 @@ if ($groupingid) {
 
 list($sort, $sortparams) = users_order_by_sql('u');
 
-$extrafields = get_extra_user_fields($context);
-$allnames = 'u.id, ' . user_picture::fields('u', $extrafields);
-
+$allnames = get_all_user_name_fields(true, 'u');
 $sql = "SELECT g.id AS groupid, gg.groupingid, u.id AS userid, $allnames, u.idnumber, u.username
           FROM {groups} g
                LEFT JOIN {groupings_groups} gg ON g.id = gg.groupid
@@ -123,9 +121,8 @@ $sql = "SELECT g.id AS groupid, gg.groupingid, u.id AS userid, $allnames, u.idnu
 
 $rs = $DB->get_recordset_sql($sql, array_merge($params, $sortparams));
 foreach ($rs as $row) {
-    $user = username_load_fields_from_object((object) [], $row, null,
-        array_merge(['id' => 'userid', 'username', 'idnumber'], $extrafields));
-
+    $user = new stdClass();
+    $user = username_load_fields_from_object($user, $row, null, array('id' => 'userid', 'username', 'idnumber'));
     if (!$row->groupingid) {
         $row->groupingid = OVERVIEW_GROUPING_GROUP_NO_GROUPING;
     }
@@ -254,22 +251,8 @@ foreach ($members as $gpgid=>$groupdata) {
         $viewfullnames = has_capability('moodle/site:viewfullnames', $context);
         $fullnames = array();
         foreach ($users as $user) {
-<<<<<<< HEAD
             $fullnames[] = html_writer::link(new moodle_url('/user/view.php', ['id' => $user->id, 'course' => $course->id]),
                 fullname($user, $viewfullnames));
-=======
-            $displayname = fullname($user, $viewfullnames);
-            if ($extrafields) {
-                $extrafieldsdisplay = [];
-                foreach ($extrafields as $field) {
-                    $extrafieldsdisplay[] = s($user->{$field});
-                }
-                $displayname .= ' (' . implode(', ', $extrafieldsdisplay) . ')';
-            }
-
-            $fullnames[] = html_writer::link(new moodle_url('/user/view.php', ['id' => $user->id, 'course' => $course->id]),
-                $displayname);
->>>>>>> remotes/origin/MOODLE_310_STABLE
         }
         $line[] = implode(', ', $fullnames);
         $line[] = count($users);

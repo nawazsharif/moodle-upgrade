@@ -38,6 +38,7 @@ $context = context_course::instance($course->id, MUST_EXIST);
 require_login($course);
 $canenrol = has_capability('enrol/manual:enrol', $context);
 $canunenrol = has_capability('enrol/manual:unenrol', $context);
+$viewfullnames = has_capability('moodle/site:viewfullnames', $context);
 
 // Note: manage capability not used here because it is used for editing
 // of existing enrolments which is not possible here.
@@ -75,7 +76,9 @@ navigation_node::override_active_url(new moodle_url('/user/index.php', array('id
 $options = array('enrolid' => $enrolid, 'accesscontext' => $context);
 
 $potentialuserselector = new enrol_manual_potential_participant('addselect', $options);
+$potentialuserselector->viewfullnames = $viewfullnames;
 $currentuserselector = new enrol_manual_current_participant('removeselect', $options);
+$currentuserselector->viewfullnames = $viewfullnames;
 
 // Build the list of options for the enrolment period dropdown.
 $unlimitedperiod = get_string('unlimited');
@@ -185,9 +188,7 @@ $removeenabled = $canunenrol ? '' : 'disabled="disabled"';
       </td>
       <td id="buttonscell">
           <div id="addcontrols">
-              <input class="btn btn-secondary" name="add" <?php echo $addenabled; ?> id="add" type="submit"
-                     value="<?php echo $OUTPUT->larrow() . '&nbsp;' . get_string('add'); ?>"
-                     title="<?php print_string('add'); ?>" /><br />
+              <input name="add" <?php echo $addenabled; ?> id="add" type="submit" value="<?php echo $OUTPUT->larrow().'&nbsp;'.get_string('add'); ?>" title="<?php print_string('add'); ?>" /><br />
 
               <div class="enroloptions">
 
@@ -204,9 +205,7 @@ $removeenabled = $canunenrol ? '' : 'disabled="disabled"';
           </div>
 
           <div id="removecontrols">
-              <input class="btn btn-secondary" name="remove" id="remove" <?php echo $removeenabled; ?> type="submit"
-                     value="<?php echo get_string('remove') . '&nbsp;' . $OUTPUT->rarrow(); ?>"
-                     title="<?php print_string('remove'); ?>" />
+              <input name="remove" id="remove" <?php echo $removeenabled; ?> type="submit" value="<?php echo get_string('remove').'&nbsp;'.$OUTPUT->rarrow(); ?>" title="<?php print_string('remove'); ?>" />
           </div>
       </td>
       <td id="potentialcell">

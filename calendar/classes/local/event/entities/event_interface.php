@@ -133,10 +133,4 @@ interface event_interface {
      * @return bool true if the event is visible, false otherwise
      */
     public function is_visible();
-
-    /**
-     * Resolved event component (frankenstyle name of activity module or the component)
-     * @return string|null
-     */
-    public function get_component();
 }

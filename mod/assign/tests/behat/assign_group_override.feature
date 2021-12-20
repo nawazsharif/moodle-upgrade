@@ -30,21 +30,28 @@ Feature: Assign group override
       | student2 | G2 |
       | student3 | G1 |
     And the following "activities" exist:
-      | activity | name                 | intro                   | course | assignsubmission_onlinetext_enabled |
-      | assign   | Test assignment name | Submit your online text | C1     | 1                                   |
+      | activity | name                 | intro                   | course | idnumber | assignsubmission_onlinetext_enabled |
+      | assign   | Test assignment name | Submit your online text | C1     | assign1  | 1                                   |
 
   Scenario: Add, modify then delete a group override
-    Given I am on the "Test assignment name" Activity page logged in as teacher1
-    When I navigate to "Group overrides" in current page administration
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I follow "Test assignment name"
+    And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-      | Override group | Group 1              |
-      | Due date       | ##1 Jan 2020 08:00## |
+      | Override group     | Group 1 |
+      | id_duedate_enabled | 1 |
+      | duedate[day]       | 1 |
+      | duedate[month]     | January |
+      | duedate[year]      | 2020 |
+      | duedate[hour]      | 08 |
+      | duedate[minute]    | 00 |
     And I press "Save"
-    Then I should see "Wednesday, 1 January 2020, 8:00"
-    And I click on "Edit" "link" in the "Group 1" "table_row"
+    And I should see "Wednesday, 1 January 2020, 8:00"
+    Then I click on "Edit" "link" in the "Group 1" "table_row"
     And I set the following fields to these values:
-      | Due date       | ##1 Jan 2030 08:00## |
+      | duedate[year] | 2030 |
     And I press "Save"
     And I should see "Tuesday, 1 January 2030, 8:00"
     And I click on "Delete" "link"
@@ -52,35 +59,54 @@ Feature: Assign group override
     And I should not see "Group 1"
 
   Scenario: Duplicate a user override
-    Given I am on the "Test assignment name" Activity page logged in as teacher1
-    When I navigate to "Group overrides" in current page administration
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I follow "Test assignment name"
+    And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-      | Override group | Group 1              |
-      | Due date       | ##1 Jan 2020 08:00## |
+      | Override group     | Group 1 |
+      | id_duedate_enabled | 1 |
+      | duedate[day]       | 1 |
+      | duedate[month]     | January |
+      | duedate[year]      | 2020 |
+      | duedate[hour]      | 08 |
+      | duedate[minute]    | 00 |
     And I press "Save"
-    Then I should see "Wednesday, 1 January 2020, 8:00"
-    And I click on "copy" "link"
+    And I should see "Wednesday, 1 January 2020, 8:00"
+    Then I click on "copy" "link"
     And I set the following fields to these values:
-      | Override group | Group 2              |
-      | Due date       | ##1 Jan 2030 08:00## |
+      | Override group | Group 2  |
+      | duedate[year]  | 2030 |
     And I press "Save"
     And I should see "Tuesday, 1 January 2030, 8:00"
     And I should see "Group 2"
 
   Scenario: Allow a group to have a different due date
-    Given I am on the "Test assignment name" Activity page logged in as teacher1
-    When I navigate to "Edit settings" in current page administration
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I follow "Test assignment name"
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
-      | Allow submissions from | disabled             |
-      | Due date               | ##1 Jan 2000 08:00## |
-      | Cut-off date           | disabled             |
+      | id_duedate_enabled | 1 |
+      | id_allowsubmissionsfromdate_enabled | 0 |
+      | id_cutoffdate_enabled | 0 |
+      | duedate[day]       | 1 |
+      | duedate[month]     | January |
+      | duedate[year]      | 2000 |
+      | duedate[hour]      | 08 |
+      | duedate[minute]    | 00 |
     And I press "Save and display"
     And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-      | Override group | Group 1              |
-      | Due date       | ##1 Jan 2020 08:00## |
+      | Override group     | Group 1 |
+      | id_duedate_enabled | 1 |
+      | duedate[day]       | 1 |
+      | duedate[month]     | January |
+      | duedate[year]      | 2020 |
+      | duedate[hour]      | 08 |
+      | duedate[minute]    | 00 |
     And I press "Save"
     And I should see "Wednesday, 1 January 2020, 8:00"
     And I log out
@@ -95,17 +121,23 @@ Feature: Assign group override
     And I should see "Wednesday, 1 January 2020, 8:00"
 
   Scenario: Allow a group to have a different cut off date
-    Given I am on the "Test assignment name" Activity page logged in as teacher1
-    When I navigate to "Edit settings" in current page administration
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I follow "Test assignment name"
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
-      | Due date               | disabled             |
-      | Allow submissions from | disabled             |
-      | Cut-off date           | ##1 Jan 2000 08:00## |
+      | id_duedate_enabled | 0 |
+      | id_allowsubmissionsfromdate_enabled | 0 |
+      | id_cutoffdate_enabled | 1 |
+      | cutoffdate[day]       | 1 |
+      | cutoffdate[month]     | January |
+      | cutoffdate[year]      | 2000 |
+      | cutoffdate[hour]      | 08 |
+      | cutoffdate[minute]    | 00 |
     And I press "Save and display"
     And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-<<<<<<< HEAD
       | Override group     | Group 1 |
       | id_cutoffdate_enabled | 1 |
       | cutoffdate[day]       | 1 |
@@ -113,10 +145,6 @@ Feature: Assign group override
       | cutoffdate[year]      | 2030 |
       | cutoffdate[hour]      | 08 |
       | cutoffdate[minute]    | 00 |
-=======
-      | Override group | Group 1              |
-      | Cut-off date   | ##1 Jan 2030 08:00## |
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I press "Save"
     And I should see "Tuesday, 1 January 2030, 8:00"
     And I log out
@@ -131,10 +159,11 @@ Feature: Assign group override
     And I should see "You have not made a submission yet."
 
   Scenario: Allow a group to have a different start date
-    Given I am on the "Test assignment name" Activity page logged in as teacher1
-    When I navigate to "Edit settings" in current page administration
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I follow "Test assignment name"
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
-<<<<<<< HEAD
       | id_duedate_enabled | 0 |
       | id_allowsubmissionsfromdate_enabled | 1 |
       | id_cutoffdate_enabled | 0 |
@@ -143,17 +172,17 @@ Feature: Assign group override
       | allowsubmissionsfromdate[year]      | 2030 |
       | allowsubmissionsfromdate[hour]      | 08 |
       | allowsubmissionsfromdate[minute]    | 00 |
-=======
-      | Due date               | disabled                 |
-      | Allow submissions from | ##1 January 2030 08:00## |
-      | Cut-off date           | disabled                 |
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I press "Save and display"
     And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-      | Override group         | Group 1              |
-      | Allow submissions from | ##1 Jan 2015 08:00## |
+      | Override group       | Group 1 |
+      | id_allowsubmissionsfromdate_enabled | 1 |
+      | allowsubmissionsfromdate[day]       | 1 |
+      | allowsubmissionsfromdate[month]     | January |
+      | allowsubmissionsfromdate[year]      | 2015 |
+      | allowsubmissionsfromdate[hour]      | 08 |
+      | allowsubmissionsfromdate[minute]    | 00 |
     And I press "Save"
     And I should see "Thursday, 1 January 2015, 8:00"
     And I log out
@@ -170,10 +199,11 @@ Feature: Assign group override
 
   @javascript
   Scenario: Add both a user and group override and verify that both are applied correctly
-    Given I am on the "Test assignment name" Activity page logged in as teacher1
-    When I navigate to "Edit settings" in current page administration
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I follow "Test assignment name"
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
-<<<<<<< HEAD
       | id_duedate_enabled | 0 |
       | id_allowsubmissionsfromdate_enabled | 1 |
       | id_cutoffdate_enabled | 0 |
@@ -182,16 +212,10 @@ Feature: Assign group override
       | allowsubmissionsfromdate[year]      | 2040 |
       | allowsubmissionsfromdate[hour]      | 08 |
       | allowsubmissionsfromdate[minute]    | 00 |
-=======
-      | Due date               | disabled                 |
-      | Allow submissions from | ##1 January 2040 08:00## |
-      | Cut-off date           | disabled                 |
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I press "Save and display"
     And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-<<<<<<< HEAD
       | Override group       | Group 1 |
       | id_allowsubmissionsfromdate_enabled | 1 |
       | allowsubmissionsfromdate[day]       | 1 |
@@ -199,17 +223,12 @@ Feature: Assign group override
       | allowsubmissionsfromdate[year]      | 2030 |
       | allowsubmissionsfromdate[hour]      | 08 |
       | allowsubmissionsfromdate[minute]    | 00 |
-=======
-      | Override group         | Group 1                  |
-      | Allow submissions from | ##1 January 2030 08:00## |
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I press "Save"
     And I should see "Tuesday, 1 January 2030, 8:00"
     And I follow "Test assignment name"
     And I navigate to "User overrides" in current page administration
     And I press "Add user override"
     And I set the following fields to these values:
-<<<<<<< HEAD
       | Override user        | Student1 |
       | id_allowsubmissionsfromdate_enabled | 1 |
       | allowsubmissionsfromdate[day]       | 1 |
@@ -217,10 +236,6 @@ Feature: Assign group override
       | allowsubmissionsfromdate[year]      | 2031 |
       | allowsubmissionsfromdate[hour]      | 08 |
       | allowsubmissionsfromdate[minute]    | 00 |
-=======
-      | Override user          | Student1                 |
-      | Allow submissions from | ##1 January 2031 08:00## |
->>>>>>> remotes/origin/MOODLE_310_STABLE
     And I press "Save"
     And I should see "Wednesday, 1 January 2031, 8:00"
     And I log out
@@ -244,10 +259,12 @@ Feature: Assign group override
       | capability                  | permission | role           | contextlevel | reference |
       | moodle/site:accessallgroups | Prevent    | editingteacher | Course       | C1        |
     And the following "activities" exist:
-      | activity | name         | intro                    | course | groupmode |
-      | assign   | Assignment 2 | Assignment 2 description | C1     | 1         |
-    And I am on the "Assignment 2" Activity page logged in as teacher1
-    When I navigate to "Group overrides" in current page administration
+      | activity | name         | intro                    | course | idnumber | groupmode |
+      | assign   | Assignment 2 | Assignment 2 description | C1     | assign2  | 1         |
+    When I log in as "teacher1"
+    And I am on "Course 1" course homepage
+    And I follow "Assignment 2"
+    And I navigate to "Group overrides" in current page administration
     Then I should see "No groups you can access."
     And the "Add group override" "button" should be disabled
 
@@ -257,13 +274,15 @@ Feature: Assign group override
       | capability                  | permission | role           | contextlevel | reference |
       | moodle/site:accessallgroups | Prevent    | editingteacher | Course       | C1        |
     And the following "activities" exist:
-      | activity | name         | intro                    | course | groupmode |
-      | assign   | Assignment 2 | Assignment 2 description | C1     | 1         |
+      | activity | name         | intro                    | course | idnumber | groupmode |
+      | assign   | Assignment 2 | Assignment 2 description | C1     | assign2  | 1         |
     And the following "group members" exist:
       | user     | group |
       | teacher1 | G1    |
-    And I am on the "Assignment 2" Activity page logged in as teacher1
-    When I navigate to "Group overrides" in current page administration
+    When I log in as "teacher1"
+    And I am on "Course 1" course homepage
+    And I follow "Assignment 2"
+    And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     Then the "Override group" select box should contain "Group 1"
     And the "Override group" select box should not contain "Group 2"
@@ -274,25 +293,38 @@ Feature: Assign group override
       | capability                  | permission | role           | contextlevel | reference |
       | moodle/site:accessallgroups | Prevent    | editingteacher | Course       | C1        |
     And the following "activities" exist:
-      | activity | name         | intro                    | course | groupmode |
-      | assign   | Assignment 2 | Assignment 2 description | C1     | 1         |
+      | activity | name         | intro                    | course | idnumber | groupmode |
+      | assign   | Assignment 2 | Assignment 2 description | C1     | assign2  | 1         |
     And the following "group members" exist:
       | user     | group |
       | teacher1 | G1    |
-    And I am on the "Assignment 2" Activity page logged in as admin
+    And I log in as "admin"
+    And I am on "Course 1" course homepage
+    And I follow "Assignment 2"
     And I navigate to "Group overrides" in current page administration
     And I press "Add group override"
     And I set the following fields to these values:
-      | Override group         | Group 1                  |
-      | Allow submissions from | ##1 January 2020 08:00## |
+      | Override group                      | Group 1 |
+      | id_allowsubmissionsfromdate_enabled | 1       |
+      | allowsubmissionsfromdate[day]       | 1       |
+      | allowsubmissionsfromdate[month]     | January |
+      | allowsubmissionsfromdate[year]      | 2020    |
+      | allowsubmissionsfromdate[hour]      | 08      |
+      | allowsubmissionsfromdate[minute]    | 00      |
     And I press "Save and enter another override"
     And I set the following fields to these values:
-      | Override group         | Group 2                  |
-      | Allow submissions from | ##1 January 2020 08:00## |
+      | Override group                      | Group 2 |
+      | id_allowsubmissionsfromdate_enabled | 1       |
+      | allowsubmissionsfromdate[day]       | 1       |
+      | allowsubmissionsfromdate[month]     | January |
+      | allowsubmissionsfromdate[year]      | 2020    |
+      | allowsubmissionsfromdate[hour]      | 08      |
+      | allowsubmissionsfromdate[minute]    | 00      |
     And I press "Save"
     And I log out
-
-    When I am on the "Assignment 2" Activity page logged in as teacher1
+    When I log in as "teacher1"
+    And I am on "Course 1" course homepage
+    And I follow "Assignment 2"
     And I navigate to "Group overrides" in current page administration
     Then I should see "Group 1" in the ".generaltable" "css_element"
     And I should not see "Group 2" in the ".generaltable" "css_element"

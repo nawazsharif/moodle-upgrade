@@ -213,11 +213,7 @@ class edit_renderer extends \plugin_renderer_base {
             'name'  => 'repaginate',
             'id'    => 'repaginatecommand',
             'value' => get_string('repaginatecommand', 'quiz'),
-<<<<<<< HEAD
             'class' => 'btn btn-secondary',
-=======
-            'class' => 'btn btn-secondary mr-1',
->>>>>>> remotes/origin/MOODLE_310_STABLE
             'data-header' => $header,
             'data-form'   => $form,
         );

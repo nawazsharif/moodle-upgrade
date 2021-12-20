@@ -24,8 +24,8 @@
 
 namespace core_h5p;
 
-use Moodle\H5PFrameworkInterface;
-use Moodle\H5PCore;
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Moodle's implementation of the H5P framework interface.
  *
@@ -33,7 +33,7 @@ use Moodle\H5PCore;
  * @copyright  2019 Mihail Geshoski <mihail@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class framework implements H5PFrameworkInterface {
+class framework implements \H5PFrameworkInterface {
 
     /** @var string The path to the last uploaded h5p */
     private $lastuploadedfolder;
@@ -115,16 +115,7 @@ class framework implements H5PFrameworkInterface {
      * @param string $url
      */
     public function setLibraryTutorialUrl($libraryname, $url) {
-        global $DB;
-
-        $sql = 'UPDATE {h5p_libraries}
-                   SET tutorial = :tutorial
-                 WHERE machinename = :machinename';
-        $params = [
-            'tutorial' => $url,
-            'machinename' => $libraryname,
-        ];
-        $DB->execute($sql, $params);
+        // Tutorial url is currently not being used or stored in libraries.
     }
 
     /**
@@ -490,7 +481,7 @@ class framework implements H5PFrameworkInterface {
 
         // Extract num from records.
         foreach ($records as $addon) {
-            $addons[] = H5PCore::snakeToCamel($addon);
+            $addons[] = \H5PCore::snakeToCamel($addon);
         }
 
         return $addons;
@@ -577,7 +568,7 @@ class framework implements H5PFrameworkInterface {
     }
 
     /**
-     * Get allowed file extension list.
+     * Get file extension whitelist.
      * Implements getWhitelist.
      *
      * The default extension list is part of h5p, but admins should be allowed to modify it.
@@ -694,9 +685,6 @@ class framework implements H5PFrameworkInterface {
      *                           - dropLibraryCss(optional): list of associative arrays containing:
      *                             - machineName: machine name for the librarys that are to drop their css
      *                           - semantics(optional): Json describing the content structure for the library
-     *                           - metadataSettings(optional): object containing:
-     *                             - disable: 1 if metadata is disabled completely
-     *                             - disableExtraTitleField: 1 if the title field is hidden in the form
      * @param bool $new Whether it is a new or existing library.
      */
     public function saveLibraryData(&$librarydata, $new = true) {
@@ -734,7 +722,6 @@ class framework implements H5PFrameworkInterface {
             'addto' => isset($librarydata['addTo']) ? json_encode($librarydata['addTo']) : null,
             'coremajor' => isset($librarydata['coreApi']['majorVersion']) ? $librarydata['coreApi']['majorVersion'] : null,
             'coreminor' => isset($librarydata['coreApi']['majorVersion']) ? $librarydata['coreApi']['minorVersion'] : null,
-            'metadatasettings' => isset($librarydata['metadataSettings']) ? $librarydata['metadataSettings'] : null,
         );
 
         if ($new) {
@@ -808,13 +795,6 @@ class framework implements H5PFrameworkInterface {
             $content['library']['libraryId'] = $mainlibrary->id;
         }
 
-        $content['disable'] = $content['disable'] ?? null;
-        // Add title to 'params' to use in the editor.
-        if (!empty($content['title'])) {
-            $params = json_decode($content['params']);
-            $params->title = $content['title'];
-            $content['params'] = json_encode($params);
-        }
         $data = [
             'jsoncontent' => $content['params'],
             'displayoptions' => $content['disable'],
@@ -1102,10 +1082,20 @@ class framework implements H5PFrameworkInterface {
      * @param int $minorversion The library's minor version
      */
     public function alterLibrarySemantics(&$semantics, $name, $majorversion, $minorversion) {
-        global $PAGE;
+        global $DB;
 
-        $renderer = $PAGE->get_renderer('core_h5p');
-        $renderer->h5p_alter_semantics($semantics, $name, $majorversion, $minorversion);
+        $library = $DB->get_record('h5p_libraries',
+            array(
+                'machinename' => $name,
+                'majorversion' => $majorversion,
+                'minorversion' => $minorversion,
+            )
+        );
+
+        if ($library) {
+            $library->semantics = json_encode($semantics);
+            $DB->update_record('h5p_libraries', $library);
+        }
     }
 
     /**
@@ -1143,7 +1133,6 @@ class framework implements H5PFrameworkInterface {
      * @param stdClass $library Library object with id, name, major version and minor version
      */
     public function deleteLibrary($library) {
-<<<<<<< HEAD
         global $DB;
 
         $fs = new \core_h5p\file_storage();
@@ -1155,10 +1144,6 @@ class framework implements H5PFrameworkInterface {
         // Remove library data from database.
         $DB->delete_records('h5p_library_dependencies', array('libraryid' => $library->id));
         $DB->delete_records('h5p_libraries', array('id' => $library->id));
-=======
-        $factory = new \core_h5p\factory();
-        \core_h5p\api::delete_library($factory, $library);
->>>>>>> remotes/origin/MOODLE_310_STABLE
     }
 
     /**
@@ -1186,7 +1171,7 @@ class framework implements H5PFrameworkInterface {
 
         $sql = "SELECT hc.id, hc.jsoncontent, hc.displayoptions, hl.id AS libraryid,
                        hl.machinename, hl.title, hl.majorversion, hl.minorversion, hl.fullscreen,
-                       hl.embedtypes, hl.semantics, hc.filtered, hc.pathnamehash
+                       hl.embedtypes, hl.semantics, hc.filtered
                   FROM {h5p} hc
                   JOIN {h5p_libraries} hl ON hl.id = hc.mainlibraryid
                  WHERE hc.id = :h5pid";
@@ -1212,7 +1197,7 @@ class framework implements H5PFrameworkInterface {
             'embedType' => 'iframe',
             'disable' => $data->displayoptions,
             'title' => $data->title,
-            'slug' => H5PCore::slugify($data->title) . '-' . $data->id,
+            'slug' => \H5PCore::slugify($data->title) . '-' . $data->id,
             'filtered' => $data->filtered,
             'libraryId' => $data->libraryid,
             'libraryName' => $data->machinename,
@@ -1220,20 +1205,8 @@ class framework implements H5PFrameworkInterface {
             'libraryMinorVersion' => $data->minorversion,
             'libraryEmbedTypes' => $data->embedtypes,
             'libraryFullscreen' => $data->fullscreen,
-            'metadata' => '',
-            'pathnamehash' => $data->pathnamehash
+            'metadata' => ''
         );
-
-        $params = json_decode($data->jsoncontent);
-        if (empty($params->metadata)) {
-            $params->metadata = new \stdClass();
-        }
-        // Add title to metadata.
-        if (!empty($params->title) && empty($params->metadata->title)) {
-            $params->metadata->title = $params->title;
-        }
-        $content['metadata'] = $params->metadata;
-        $content['params'] = json_encode($params->params ?? $params);
 
         return $content;
     }
@@ -1281,7 +1254,7 @@ class framework implements H5PFrameworkInterface {
         $dependencies = array();
         foreach ($data as $dependency) {
             unset($dependency->unidepid);
-            $dependencies[$dependency->machine_name] = H5PCore::snakeToCamel($dependency);
+            $dependencies[$dependency->machine_name] = \H5PCore::snakeToCamel($dependency);
         }
 
         return $dependencies;
@@ -1290,10 +1263,6 @@ class framework implements H5PFrameworkInterface {
     /**
      * Get stored setting.
      * Implements getOption.
-     *
-     * To avoid updating the cache libraries when using the Hub selector,
-     * {@see \Moodle\H5PEditorAjax::isContentTypeCacheUpdated}, the setting content_type_cache_updated_at
-     * always return the current time.
      *
      * @param string $name Identifier for the setting
      * @param string $default Optional default value if settings is not set
@@ -1304,16 +1273,7 @@ class framework implements H5PFrameworkInterface {
             // For now, the download and the embed displayoptions are disabled by default, so only will be rendered when
             // defined in the displayoptions DB field.
             // This check should be removed if they are added as new H5P settings, to let admins to define the default value.
-<<<<<<< HEAD
             return \H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
-=======
-            return \Moodle\H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
-        }
-
-        // To avoid update the libraries cache using the Hub selector.
-        if ($name == 'content_type_cache_updated_at') {
-            return time();
->>>>>>> remotes/origin/MOODLE_310_STABLE
         }
 
         $value = get_config('core_h5p', $name);
@@ -1559,7 +1519,7 @@ class framework implements H5PFrameworkInterface {
      * Check whether a user has permissions to execute an action, such as embed H5P content.
      * Implements hasPermission.
      *
-     * @param  H5PPermission $permission Permission type
+     * @param  \H5PPermission $permission Permission type
      * @param  int $id Id need by platform to determine permission
      * @return boolean true if the user can execute the action defined in $permission; false otherwise
      */

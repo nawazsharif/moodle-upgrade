@@ -17,10 +17,7 @@
 
 namespace MongoDB\Exception;
 
-use function gettype;
-use function sprintf;
-
-class ResumeTokenException extends RuntimeException
+class ResumeTokenException extends \Exception
 {
     /**
      * Thrown when a resume token has an invalid type.

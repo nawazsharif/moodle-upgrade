@@ -154,7 +154,8 @@ class MoodleQuickForm_date_time_selector extends MoodleQuickForm_group {
         if ($calendartype->get_name() === 'gregorian') {
             $image = $OUTPUT->pix_icon('i/calendar', get_string('calendar', 'calendar'), 'moodle');
             $this->_elements[] = $this->createFormElement('link', 'calendar',
-                    null, '#', $image);
+                    null, '#', $image,
+                    array('class' => 'visibleifjs'));
         }
         // If optional we add a checkbox which the user can use to turn if on
         if ($this->_options['optional']) {
@@ -186,7 +187,7 @@ class MoodleQuickForm_date_time_selector extends MoodleQuickForm_group {
                 if (null === $value) {
                     // If no boxes were checked, then there is no value in the array
                     // yet we don't want to display default value in this case.
-                    if ($caller->isSubmitted() && !$caller->is_new_repeat($this->getName())) {
+                    if ($caller->isSubmitted()) {
                         $value = $this->_findValue($caller->_submitValues);
                     } else {
                         $value = $this->_findValue($caller->_defaultValues);

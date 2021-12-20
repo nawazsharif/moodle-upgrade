@@ -418,9 +418,9 @@ class repository_dropbox_api_testcase extends advanced_testcase {
         $mock->expects($this->exactly(3))
             ->method('request')
             ->will($this->onConsecutiveCalls(
-                json_encode(['has_more' => true, 'cursor' => 'Example', 'matches' => ['foo', 'bar']]),
-                json_encode(['has_more' => true, 'cursor' => 'Example', 'matches' => ['baz']]),
-                json_encode(['has_more' => false, 'cursor' => '', 'matches' => ['bum']])
+                json_encode(['has_more' => true, 'cursor' => 'Example', 'entries' => ['foo', 'bar']]),
+                json_encode(['has_more' => true, 'cursor' => 'Example', 'entries' => ['baz']]),
+                json_encode(['has_more' => false, 'cursor' => '', 'entries' => ['bum']])
             ));
 
         // We automatically adjust for the /continue endpoint.
@@ -437,14 +437,14 @@ class repository_dropbox_api_testcase extends advanced_testcase {
         $rc = new \ReflectionClass(\repository_dropbox\dropbox::class);
         $rcm = $rc->getMethod('fetch_dropbox_data');
         $rcm->setAccessible(true);
-        $result = $rcm->invoke($mock, $endpoint, null, 'matches');
+        $result = $rcm->invoke($mock, $endpoint, null);
 
         $this->assertEquals([
             'foo',
             'bar',
             'baz',
             'bum',
-        ], $result->matches);
+        ], $result->entries);
 
         $this->assertFalse(isset($result->cursor));
         $this->assertFalse(isset($result->has_more));

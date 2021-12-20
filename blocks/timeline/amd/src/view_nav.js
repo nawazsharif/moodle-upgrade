@@ -16,6 +16,7 @@
 /**
  * Manage the timeline view navigation for the timeline block.
  *
+ * @package    block_timeline
  * @copyright  2018 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -88,7 +89,7 @@ function(
 
                 var option = $(e.target).closest(SELECTORS.TIMELINE_DAY_FILTER_OPTION);
 
-                if (option.attr('aria-current') == 'true') {
+                if (option.hasClass('active')) {
                     // If it's already active then we don't need to do anything.
                     return;
                 }
@@ -129,11 +130,9 @@ function(
 
         // Listen for when the user changes tab so that we can show the first set of courses
         // and load their events when they request the sort by courses view for the first time.
-        viewSelector.on('shown shown.bs.tab', function(e) {
+        viewSelector.on('shown shown.bs.tab', function() {
             View.shown(timelineViewRoot);
-            $(e.target).removeClass('active');
         });
-
 
         // Event selector for user_sort
         CustomEvents.define(viewSelector, [CustomEvents.events.activate]);

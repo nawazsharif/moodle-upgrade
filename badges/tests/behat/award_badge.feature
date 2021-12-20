@@ -25,6 +25,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge 1 |
       | Description | Course badge 1 description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Manual issue by role"
@@ -42,6 +43,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge 2 |
       | Description | Course badge 2 description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     # Set "course badge 1" as criteria
@@ -100,6 +102,8 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Profile Badge |
       | Description | Test badge description |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Profile completion"
@@ -136,6 +140,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Site Badge |
       | Description | Site badge description |
+      | issuername | Tester of site badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Manual issue by role"
@@ -163,22 +168,22 @@ Feature: Award badges
       | teacher1 | Teacher | 1 | teacher1@example.com |
       | student1 | Student | 1 | student1@example.com |
       | student2 | Student | 2 | student2@example.com |
-    And the "multilang" filter is "on"
-    And the "multilang" filter applies to "content and headings"
     And the following "courses" exist:
       | fullname | shortname | category | groupmode |
-      | <span class="multilang" lang="en">Course 1</span><span class="multilang" lang="de">Kurs 1</span> | C1 | 0 | 1 |
+      | Course 1 | C1 | 0 | 1 |
     And the following "course enrolments" exist:
       | user | course | role |
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
       | student2 | C1 | student |
-    And I am on the "C1" "Course" page logged in as "teacher1"
+    And I log in as "teacher1"
+    And I am on "Course 1" course homepage
     And I navigate to "Badges > Add a new badge" in current page administration
     And I follow "Add a new badge"
     And I set the following fields to these values:
       | Name | Course Badge |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Manual issue by role"
@@ -198,9 +203,7 @@ Feature: Award badges
     And I log in as "student1"
     And I follow "Profile" in the user menu
     And I click on "Course 1" "link" in the "region-main" "region"
-    And I click on "Course Badge" "link"
-    And "Course 1" "text" should appear after "Badge details" "text"
-    And "Kurs 1" "text" should not exist
+    And I should see "Course Badge"
 
   @javascript
   Scenario: Award badge on activity completion
@@ -232,6 +235,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Activity completion"
@@ -286,6 +290,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Course completion"
@@ -335,6 +340,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge 1 |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Manual issue by role"
@@ -360,6 +366,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge 2 |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Manual issue by role"
@@ -416,6 +423,7 @@ Feature: Award badges
     And I set the following fields to these values:
       | Name | Course Badge |
       | Description | Course badge description |
+      | issuername | Tester of course badge |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I set the field "type" to "Manual issue by role"

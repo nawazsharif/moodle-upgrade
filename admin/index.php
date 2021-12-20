@@ -241,7 +241,7 @@ if (!core_tables_exist()) {
 
     // check plugin dependencies
     $failed = array();
-    if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed, $CFG->branch)) {
+    if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed)) {
         $PAGE->navbar->add(get_string('pluginscheck', 'admin'));
         $PAGE->set_title($strinstallation);
         $PAGE->set_heading($strinstallation . ' - Moodle ' . $CFG->target_release);
@@ -508,11 +508,7 @@ if (!$cache and $version > $CFG->version) {  // upgrade
     } else {
         // Always verify plugin dependencies!
         $failed = array();
-<<<<<<< HEAD
         if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed)) {
-=======
-        if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed, $CFG->branch)) {
->>>>>>> remotes/origin/MOODLE_310_STABLE
             echo $output->unsatisfied_dependencies_page($version, $failed, new moodle_url($PAGE->url,
                 array('confirmplugincheck' => 0)));
             die();
@@ -704,7 +700,7 @@ if (!$cache and moodle_needs_upgrading()) {
 
         // Make sure plugin dependencies are always checked.
         $failed = array();
-        if (!$pluginman->all_plugins_ok($version, $failed, $CFG->branch)) {
+        if (!$pluginman->all_plugins_ok($version, $failed)) {
             $output = $PAGE->get_renderer('core', 'admin');
             echo $output->unsatisfied_dependencies_page($version, $failed, new moodle_url($PAGE->url,
                 array('confirmplugincheck' => 0)));
@@ -849,9 +845,8 @@ $errorsdisplayed = defined('WARN_DISPLAY_ERRORS_ENABLED');
 $lastcron = get_config('tool_task', 'lastcronstart');
 $cronoverdue = ($lastcron < time() - 3600 * 24);
 $lastcroninterval = get_config('tool_task', 'lastcroninterval');
-
-$expectedfrequency = $CFG->expectedcronfrequency ?? MINSECS;
-$croninfrequent = !$cronoverdue && ($lastcroninterval > ($expectedfrequency + MINSECS) || $lastcron < time() - $expectedfrequency);
+$expectedfrequency = $CFG->expectedcronfrequency ?? 200;
+$croninfrequent = !$cronoverdue && ($lastcroninterval > $expectedfrequency || $lastcron < time() - $expectedfrequency);
 $dbproblems = $DB->diagnose();
 $maintenancemode = !empty($CFG->maintenance_enabled);
 
@@ -905,12 +900,6 @@ if (empty($CFG->disabledevlibdirscheck) && (is_dir($CFG->dirroot.'/vendor') || i
 // Check if the site is being foced onto ssl.
 $overridetossl = !empty($CFG->overridetossl);
 
-// Check if moodle campaign content setting is enabled or not.
-$showcampaigncontent = !isset($CFG->showcampaigncontent) || $CFG->showcampaigncontent;
-
-// Encourage admins to enable the user feedback feature if it is not enabled already.
-$showfeedbackencouragement = empty($CFG->enableuserfeedback);
-
 admin_externalpage_setup('adminnotifications');
 
 $output = $PAGE->get_renderer('core', 'admin');
@@ -918,5 +907,4 @@ $output = $PAGE->get_renderer('core', 'admin');
 echo $output->admin_notifications_page($maturity, $insecuredataroot, $errorsdisplayed, $cronoverdue, $dbproblems,
                                        $maintenancemode, $availableupdates, $availableupdatesfetch, $buggyiconvnomb,
                                        $registered, $cachewarnings, $eventshandlers, $themedesignermode, $devlibdir,
-                                       $mobileconfigured, $overridetossl, $invalidforgottenpasswordurl, $croninfrequent,
-                                       $showcampaigncontent, $showfeedbackencouragement);
+                                       $mobileconfigured, $overridetossl, $invalidforgottenpasswordurl, $croninfrequent);

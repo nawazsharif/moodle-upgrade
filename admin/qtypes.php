@@ -172,7 +172,7 @@ foreach ($sortedqtypes as $qtypename => $localname) {
     if ($version) {
         $row[] = $version;
     } else {
-        $row[] = html_writer::tag('span', get_string('nodatabase', 'admin'), array('class' => 'text-muted'));
+        $row[] = html_writer::tag('span', get_string('nodatabase', 'admin'), array('class' => 'disabled'));
     }
 
     // Other question types required by this one.

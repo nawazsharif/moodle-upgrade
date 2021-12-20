@@ -66,12 +66,10 @@ if ($l) {  // Two ways to specify the module.
 
 $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 
-$typeid = $lti->typeid;
-if (empty($typeid) && ($tool = lti_get_tool_by_url_match($lti->toolurl))) {
-    $typeid = $tool->id;
-}
-if ($typeid) {
-    $toolconfig = lti_get_type_config($typeid);
+if (!empty($lti->typeid)) {
+    $toolconfig = lti_get_type_config($lti->typeid);
+} else if ($tool = lti_get_tool_by_url_match($lti->toolurl)) {
+    $toolconfig = lti_get_type_config($tool->id);
 } else {
     $toolconfig = array();
 }
@@ -118,6 +116,7 @@ if ($lti->showdescriptionlaunch && $lti->intro) {
     echo $OUTPUT->box(format_module_intro('lti', $lti, $cm->id), 'generalbox description', 'intro');
 }
 
+$typeid = $lti->typeid;
 if ($typeid) {
     $config = lti_get_type_type_config($typeid);
 } else {

@@ -12,6 +12,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+/* global SELECTOR, COMMENTCOLOUR, COMMENTTEXTCOLOUR */
 
 /**
  * Provides an in browser PDF editor.
@@ -232,18 +233,9 @@ var COMMENT = function(editor, gradeid, pageno, x, y, width, colour, rawtext) {
      * @method delete_comment_later
      */
     this.delete_comment_later = function() {
-        if (this.deleteme && !this.is_menu_active()) {
+        if (this.deleteme) {
             this.remove();
         }
-    };
-
-    /**
-     * Returns true if the menu is active, false otherwise.
-     *
-     * @return bool true if menu is active, else false.
-     */
-    this.is_menu_active = function() {
-        return this.menu.get('visible');
     };
 
     /**
@@ -263,11 +255,11 @@ var COMMENT = function(editor, gradeid, pageno, x, y, width, colour, rawtext) {
         // Function to collapse a comment to a marker icon.
         node.collapse = function(delay) {
             node.collapse.delay = Y.later(delay, node, function() {
-                if (editor.collapsecomments && !this.is_menu_active()) {
+                if (editor.collapsecomments) {
                     container.addClass('commentcollapsed');
                 }
-            }.bind(this));
-        }.bind(this);
+            });
+        };
 
         // Function to expand a comment.
         node.expand = function() {

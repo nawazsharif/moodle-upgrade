@@ -17,13 +17,14 @@
  * Various actions on modules and sections in the editing mode - hiding, duplicating, deleting, etc.
  *
  * @module     core_course/actions
+ * @package    core
  * @copyright  2016 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.3
  */
 define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str', 'core/url', 'core/yui',
-        'core/modal_factory', 'core/modal_events', 'core/key_codes', 'core/log'],
-    function($, ajax, templates, notification, str, url, Y, ModalFactory, ModalEvents, KeyCodes, log) {
+        'core/modal_factory', 'core/modal_events', 'core/key_codes'],
+    function($, ajax, templates, notification, str, url, Y, ModalFactory, ModalEvents, KeyCodes) {
         var CSS = {
             EDITINPROGRESS: 'editinprogress',
             SECTIONDRAGGABLE: 'sectiondraggable',
@@ -340,11 +341,13 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
          * @param {String} image new image name ("i/show", "i/hide", etc.)
          * @param {String} stringname new string for the action menu item
          * @param {String} stringcomponent
+         * @param {String} titlestr not used
+         * @param {String} titlecomponent not used
          * @param {String} newaction new value for data-action attribute of the link
          * @return {Promise} promise which is resolved when the replacement has completed
          */
         var replaceActionItem = function(actionitem, image, stringname,
-                                           stringcomponent, newaction) {
+                                           stringcomponent, titlestr, titlecomponent, newaction) {
 
             var stringRequests = [{key: stringname, component: stringcomponent}];
             // Do not provide an icon with duplicate, different text to the menu item.
@@ -384,11 +387,11 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
                 if (action === 'hide') {
                     sectionElement.addClass('hidden');
                     replaceActionItem(actionItem, 'i/show',
-                        'showfromothers', 'format_' + courseformat, 'show');
+                        'showfromothers', 'format_' + courseformat, null, null, 'show');
                 } else {
                     sectionElement.removeClass('hidden');
                     replaceActionItem(actionItem, 'i/hide',
-                        'hidefromothers', 'format_' + courseformat, 'hide');
+                        'hidefromothers', 'format_' + courseformat, null, null, 'hide');
                 }
                 // Replace the modules with new html (that indicates that they are now hidden or not hidden).
                 if (data.modules !== undefined) {
@@ -405,14 +408,14 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
                     oldActionItem = oldmarker.find(SELECTOR.SECTIONACTIONMENU + ' ' + 'a[data-action=removemarker]');
                 oldmarker.removeClass('current');
                 replaceActionItem(oldActionItem, 'i/marker',
-                    'highlight', 'core', 'setmarker');
+                    'highlight', 'core', 'markthistopic', 'core', 'setmarker');
                 sectionElement.addClass('current');
                 replaceActionItem(actionItem, 'i/marked',
-                    'highlightoff', 'core', 'removemarker');
+                    'highlightoff', 'core', 'markedthistopic', 'core', 'removemarker');
             } else if (action === 'removemarker') {
                 sectionElement.removeClass('current');
                 replaceActionItem(actionItem, 'i/marker',
-                    'highlight', 'core', 'setmarker');
+                    'highlight', 'core', 'markthistopic', 'core', 'setmarker');
             }
         };
 
@@ -607,19 +610,19 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
              *
              * This method can be used by course formats in their listener to the coursesectionedited event
              *
-             * @deprecated since Moodle 3.9
              * @param {JQuery} sectionelement
              * @param {String} selector CSS selector inside the section element, for example "a[data-action=show]"
              * @param {String} image new image name ("i/show", "i/hide", etc.)
              * @param {String} stringname new string for the action menu item
              * @param {String} stringcomponent
+             * @param {String} titlestr string for "title" attribute (if different from stringname)
+             * @param {String} titlecomponent
              * @param {String} newaction new value for data-action attribute of the link
              */
             replaceSectionActionItem: function(sectionelement, selector, image, stringname,
-                                                    stringcomponent, newaction) {
-                log.debug('replaceSectionActionItem() is deprecated and will be removed.');
+                                                    stringcomponent, titlestr, titlecomponent, newaction) {
                 var actionitem = sectionelement.find(SELECTOR.SECTIONACTIONMENU + ' ' + selector);
-                replaceActionItem(actionitem, image, stringname, stringcomponent, newaction);
+                replaceActionItem(actionitem, image, stringname, stringcomponent, titlestr, titlecomponent, newaction);
             }
         };
     });

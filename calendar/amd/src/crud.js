@@ -17,6 +17,7 @@
  * A module to handle CRUD operations within the UI.
  *
  * @module     core_calendar/crud
+ * @package    core_calendar
  * @copyright  2017 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -62,7 +63,6 @@ function(
      * @return {Promise}
      */
     function confirmDeletion(eventId, eventTitle, eventCount) {
-        var pendingPromise = new Pending('core_calendar/crud:confirmDeletion');
         var deleteStrings = [
             {
                 key: 'deleteevent',
@@ -96,16 +96,17 @@ function(
             });
 
 
-            deletePromise = ModalFactory.create({
-                type: ModalFactory.types.SAVE_CANCEL,
-            });
+            deletePromise = ModalFactory.create(
+                {
+                    type: ModalFactory.types.SAVE_CANCEL
+                }
+            );
         }
 
         var stringsPromise = Str.get_strings(deleteStrings);
 
         var finalPromise = $.when(stringsPromise, deletePromise)
         .then(function(strings, deleteModal) {
-            deleteModal.setRemoveOnClose(true);
             deleteModal.setTitle(strings[0]);
             deleteModal.setBody(strings[1]);
             if (!isRepeatedEvent) {
@@ -138,14 +139,6 @@ function(
 
             return deleteModal;
         })
-<<<<<<< HEAD
-=======
-        .then(function(modal) {
-            pendingPromise.resolve();
-
-            return modal;
-        })
->>>>>>> remotes/origin/MOODLE_310_STABLE
         .catch(Notification.exception);
 
         return finalPromise;

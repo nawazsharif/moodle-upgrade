@@ -31,12 +31,7 @@ $string['addcategory'] = 'Add category';
 $string['addnewdefaults'] = 'Add a new module default';
 $string['addpurpose'] = 'Add purpose';
 $string['approve'] = 'Approve';
-$string['approvedrequestsubmitted'] = 'Your request has been submitted and will be processed soon.';
 $string['approverequest'] = 'Approve request';
-$string['automaticdatadeletionapproval'] = 'Automatic data deletion request approval';
-$string['automaticdatadeletionapproval_desc'] = 'If enabled, data deletion requests are automatically approved.<br/>Note that the automatic approval will only apply to new data deletion requests with this setting enabled. Existing data deletion requests pending approval will still have to be manually approved by the privacy officer.';
-$string['automaticdataexportapproval'] = 'Automatic data export request approval';
-$string['automaticdataexportapproval_desc'] = 'If enabled, data export requests are automatically approved.<br/>Note that the automatic approval will only apply to new data export requests with this setting enabled. Existing data export requests pending approval will still have to be manually approved by the privacy officer.';
 $string['automaticdeletionrequests'] = 'Create automatic data deletion requests';
 $string['automaticdeletionrequests_desc'] = 'If enabled, a data deletion request will be created automatically for any user accounts deleted manually.';
 $string['bulkapproverequests'] = 'Approve requests';
@@ -344,3 +339,6 @@ $string['role_help'] = 'The role which the override should apply to.';
 $string['duplicaterole'] = 'Role already specified';
 $string['purposeoverview'] = 'A purpose describes the intended use and retention policy for stored data. The basis for storing and retaining that data is also described in the purpose.';
 $string['roleoverrideoverview'] = 'The default retention policy can be overridden for specific user roles, allowing you to specify a longer, or a shorter, retention policy. A user is only expired when all of their roles have expired.';
+
+// Deprecated since Moodle 3.6.
+$string['statuspreprocessing'] = 'Pre-processing';

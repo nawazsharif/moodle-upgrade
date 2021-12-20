@@ -9,6 +9,17 @@ Feature: Add badges to the system
     And I log in as "admin"
 
   @javascript
+  Scenario: Setting badges settings
+    Given I navigate to "Badges > Badges settings" in site administration
+    And I set the field "Badge issuer name" to "Test Badge Site"
+    And I set the field "Badge issuer email address" to "testuser@example.com"
+    And I press "Save changes"
+    And I follow "Badges"
+    When I follow "Add a new badge"
+    Then the field "issuercontact" matches value "testuser@example.com"
+    And the field "issuername" matches value "Test Badge Site"
+
+  @javascript
   Scenario: Accessing the badges
     And I press "Customise this page"
    # TODO MDL-57120 site "Badges" link not accessible without navigation block.
@@ -19,11 +30,7 @@ Feature: Add badges to the system
 
   @javascript @_file_upload
   Scenario: Add a badge
-    Given I navigate to "Badges > Badges settings" in site administration
-    And I set the field "Badge issuer name" to "Test Badge Site"
-    And I set the field "Badge issuer email address" to "testuser@example.com"
-    And I press "Save changes"
-    And I navigate to "Badges > Add a new badge" in site administration
+    Given I navigate to "Badges > Add a new badge" in site administration
     And I set the following fields to these values:
       | Name | Test badge with 'apostrophe' and other friends (<>&@#) |
       | Version | v1 |
@@ -31,6 +38,8 @@ Feature: Add badges to the system
       | Description | Test badge description |
       | Image author | http://author.example.com |
       | Image caption | Test caption image |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     When I press "Create badge"
     Then I should see "Edit details"
@@ -39,11 +48,6 @@ Feature: Add badges to the system
     And I should see "Related badges (0)"
     And I should see "Alignments (0)"
     And I should not see "Create badge"
-    And I should not see "Issuer details"
-    And I follow "Overview"
-    And I should see "Issuer details"
-    And I should see "Test Badge Site"
-    And I should see "testuser@example.com"
     And I follow "Manage badges"
     And I should see "Number of badges available: 1"
     And I should not see "There are no badges available."
@@ -58,6 +62,8 @@ Feature: Add badges to the system
       | Description | Test badge related description |
       | Image author | http://author.example.com |
       | Image caption | Test caption image |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I wait until the page is ready
@@ -71,6 +77,8 @@ Feature: Add badges to the system
       | Description | Test badge description |
       | Image author | http://author.example.com |
       | Image caption | Test caption image |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     And I follow "Related badges (0)"
@@ -93,6 +101,8 @@ Feature: Add badges to the system
       | Description | Test badge description |
       | Image author | http://author.example.com |
       | Image caption | Test caption image |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     When I press "Create badge"
     Then I should see "Edit details"
@@ -117,6 +127,8 @@ Feature: Add badges to the system
       | Description | Test badge description |
       | Image author | http://author.example.com |
       | Image caption | Test caption image |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     When I press "Create badge"
     Then I should see "Test Badge"
@@ -149,6 +161,8 @@ Feature: Add badges to the system
       | Description | Test badge description |
       | Image author | http://author.example.com |
       | Image caption | Test caption image |
+      | issuername | Test Badge Site |
+      | issuercontact | testuser@example.com |
     And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
     And I press "Create badge"
     Then I should see "Edit details"
@@ -166,32 +180,3 @@ Feature: Add badges to the system
     And I click on "Site badges" "link" in the "Navigation" "block"
     Then I should see "Manage badges"
     And I should see "Add a new badge"
-
-  @javascript @_file_upload
-  Scenario: Edit a badge
-    Given I navigate to "Badges > Badges settings" in site administration
-    And I set the field "Badge issuer name" to "Test Badge Site"
-    And I set the field "Badge issuer email address" to "testuser@example.com"
-    And I press "Save changes"
-    And I navigate to "Badges > Add a new badge" in site administration
-    And I set the following fields to these values:
-      | Name | Test badge with 'apostrophe' and other friends (<>&@#) |
-      | Version | firstversion |
-      | Language | English |
-      | Description | Test badge description |
-      | Image author | http://author.example.com |
-      | Image caption | Test caption image |
-    And I upload "badges/tests/behat/badge.png" file to "Image" filemanager
-    And I press "Create badge"
-    When I follow "Edit details"
-    And I should see "Test badge with 'apostrophe' and other friends (&@#)"
-    And I should not see "Issuer details"
-    And I set the following fields to these values:
-      | Name | Test badge renamed |
-      | Version | secondversion |
-    And I press "Save changes"
-    And I follow "Overview"
-    Then I should not see "Test badge with 'apostrophe' and other friends (&@#)"
-    And I should not see "firstversion"
-    And I should see "Test badge renamed"
-    And I should see "secondversion"

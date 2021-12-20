@@ -225,8 +225,7 @@ class quiz_overview_report extends quiz_attempts_report {
                     $data = quiz_report_grade_bands($bandwidth, $bands, $quiz->id, $groupstudentsjoins);
                     $chart = self::get_chart($labels, $data);
                     $graphname = get_string('overviewreportgraphgroup', 'quiz_overview', groups_get_group_name($currentgroup));
-                    // Numerical range data should display in LTR even for RTL languages.
-                    echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
+                    echo $output->chart($chart, $graphname);
                 }
             }
 
@@ -234,8 +233,7 @@ class quiz_overview_report extends quiz_attempts_report {
                 $data = quiz_report_grade_bands($bandwidth, $bands, $quiz->id, new \core\dml\sql_join());
                 $chart = self::get_chart($labels, $data);
                 $graphname = get_string('overviewreportgraph', 'quiz_overview');
-                // Numerical range data should display in LTR even for RTL languages.
-                echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
+                echo $output->chart($chart, $graphname);
             }
         }
         return true;

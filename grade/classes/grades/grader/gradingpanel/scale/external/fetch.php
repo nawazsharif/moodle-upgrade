@@ -97,8 +97,8 @@ class fetch extends external_api {
      * @since Moodle 3.8
      */
     public static function execute(string $component, int $contextid, string $itemname, int $gradeduserid): array {
-        global $USER, $CFG;
-        require_once("{$CFG->libdir}/gradelib.php");
+        global $USER;
+
         [
             'component' => $component,
             'contextid' => $contextid,
@@ -134,12 +134,9 @@ class fetch extends external_api {
             $gradeitem->require_user_can_grade($gradeduser, $USER);
         }
 
-        // Set up some items we need to return on other interfaces.
-        $gradegrade = \grade_grade::fetch(['itemid' => $gradeitem->get_grade_item()->id, 'userid' => $gradeduser->id]);
-        $gradername = $gradegrade ? fullname(\core_user::get_user($gradegrade->usermodified)) : null;
         $maxgrade = (int) $gradeitem->get_grade_item()->grademax;
 
-        return self::get_fetch_data($gradeitem, $gradeduser, $maxgrade, $gradername);
+        return self::get_fetch_data($gradeitem, $gradeduser, $maxgrade);
     }
 
     /**
@@ -148,14 +145,13 @@ class fetch extends external_api {
      * @param gradeitem $gradeitem
      * @param stdClass $gradeduser
      * @param int $maxgrade
-     * @param string|null $gradername
      * @return array
      */
-    public static function get_fetch_data(gradeitem $gradeitem, stdClass $gradeduser, int $maxgrade, ?string $gradername): array {
+    public static function get_fetch_data(gradeitem $gradeitem, stdClass $gradeduser, int $maxgrade): array {
         global $USER;
 
         $hasgrade = $gradeitem->user_has_grade($gradeduser);
-        $grade = $gradeitem->get_formatted_grade_for_user($gradeduser, $USER);
+        $grade = $gradeitem->get_grade_for_user($gradeduser, $USER);
         $currentgrade = (int) unformat_float($grade->grade);
 
         $menu = $gradeitem->get_grade_menu();
@@ -172,9 +168,8 @@ class fetch extends external_api {
             'hasgrade' => $hasgrade,
             'grade' => [
                 'options' => $values,
-                'usergrade' => $grade->usergrade,
+                'usergrade' => $grade->grade,
                 'maxgrade' => $maxgrade,
-                'gradedby' => $gradername,
                 'timecreated' => $grade->timecreated,
                 'timemodified' => $grade->timemodified,
             ],
@@ -203,7 +198,6 @@ class fetch extends external_api {
                 ),
                 'usergrade' => new external_value(PARAM_RAW, 'Current user grade'),
                 'maxgrade' => new external_value(PARAM_RAW, 'Max possible grade'),
-                'gradedby' => new external_value(PARAM_RAW, 'The assumed grader of this grading instance'),
                 'timecreated' => new external_value(PARAM_INT, 'The time that the grade was created'),
                 'timemodified' => new external_value(PARAM_INT, 'The time that the grade was last updated'),
             ]),
